@@ -1,0 +1,18 @@
+# Derleme çıktıları
+bin/
+obj/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+*.user
+*.suo
+
+# SQLite veritabanı (yerel veri, seed açılışta oluşur)
+*.db
+*.db-shm
+*.db-wal
+
+# İşletim sistemi
+Thumbs.db
+.DS_Store
