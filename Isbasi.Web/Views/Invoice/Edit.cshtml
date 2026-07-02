@@ -45,6 +45,10 @@
             @typeTitle <small class="text-muted">@vatNote</small>
         </h1>
         <div class="d-flex gap-2">
+            @if (Model.Id != 0)
+            {
+                <a href="/invoice/print/@Model.Id" target="_blank" class="btn btn-cancel btn-sm"><i class="fas fa-print me-1"></i> Yazdır</a>
+            }
             <button type="button" class="btn btn-file btn-sm" onclick="alert('Dosya ekleme bu sürümde henüz yok.')"><i class="fas fa-image me-1"></i> Dosya Ekle</button>
             <button type="submit" name="submitAction" value="saveAndNew" class="btn btn-save-new btn-sm"><i class="fas fa-save me-1"></i> Kaydet ve Yeni Ekle</button>
             <button type="submit" name="submitAction" value="save" class="btn btn-save btn-sm"><i class="fas fa-save me-1"></i> Kaydet</button>

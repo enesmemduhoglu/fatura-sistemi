@@ -1,6 +1,7 @@
 @model List<Product>
 @{
     ViewData["Title"] = "Ürünler";
+    var stocks = (Dictionary<int, decimal>)ViewBag.Stocks;
 }
 
 <div class="page-header">
@@ -41,7 +42,7 @@
                         <th class="text-end">Satış Fiyatı</th>
                         <th class="text-end">Alış Fiyatı</th>
                         <th class="text-end">KDV %</th>
-                        <th class="text-end">Stok Miktarı</th>
+                        <th class="text-end">Güncel Stok</th>
                         <th class="text-end">İşlemler</th>
                     </tr>
                 </thead>
@@ -55,7 +56,10 @@
                             <td class="text-end">@product.SalePrice.ToString("N2") ₺</td>
                             <td class="text-end">@product.PurchasePrice.ToString("N2") ₺</td>
                             <td class="text-end">%@product.VatRate.ToString("N0")</td>
-                            <td class="text-end">@product.StockAmount.ToString("N0")</td>
+                            @{
+                                decimal currentStock = stocks.GetValueOrDefault(product.Id, product.StockAmount);
+                            }
+                            <td class="text-end fw-medium @(currentStock < 0 ? "text-danger" : "")">@currentStock.ToString("0.##")</td>
                             <td class="text-end">
                                 <a href="/definitions/product/edit?id=@product.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
                                 <form method="post" action="/definitions/product/delete/@product.Id" class="d-inline"

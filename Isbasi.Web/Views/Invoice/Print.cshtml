@@ -1,0 +1,141 @@
+@model Invoice
+@{
+    Layout = null;
+    string typeTitle = Model.Type switch
+    {
+        InvoiceType.SalesWholesale => "SATIŞ FATURASI",
+        InvoiceType.SalesRetail => "SATIŞ FATURASI",
+        InvoiceType.Expense => "GİDER FATURASI",
+        _ => "ALIŞ FATURASI"
+    };
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>@Model.InvoiceNumber - Yazdır</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #333; padding: 30px; }
+        .print-actions { text-align: right; margin-bottom: 16px; }
+        .print-actions button, .print-actions a {
+            padding: 8px 18px; border: none; border-radius: 4px; cursor: pointer;
+            font-size: 13px; text-decoration: none; display: inline-block;
+        }
+        .btn-print { background: #e8112d; color: #fff; }
+        .btn-back { background: #6c757d; color: #fff; margin-right: 6px; }
+        .invoice-box { max-width: 800px; margin: 0 auto; border: 1px solid #ddd; padding: 32px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #e8112d; padding-bottom: 16px; margin-bottom: 20px; }
+        .company-name { font-size: 22px; font-weight: 700; color: #e8112d; }
+        .doc-title { text-align: right; }
+        .doc-title h1 { font-size: 18px; color: #333; }
+        .doc-title .no { font-size: 13px; color: #666; margin-top: 4px; }
+        .parties { display: flex; justify-content: space-between; gap: 30px; margin-bottom: 24px; }
+        .party h3 { font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 6px; letter-spacing: .5px; }
+        .party .name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+        .party div { line-height: 1.5; }
+        .dates { text-align: right; line-height: 1.7; }
+        .dates span { color: #999; }
+        table.lines { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table.lines th { background: #f5f5f5; text-align: left; padding: 8px; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #ddd; }
+        table.lines th.num, table.lines td.num { text-align: right; }
+        table.lines td { padding: 8px; border-bottom: 1px solid #eee; }
+        .totals { margin-left: auto; width: 300px; }
+        .totals .row { display: flex; justify-content: space-between; padding: 5px 8px; }
+        .totals .row.grand { border-top: 2px solid #e8112d; font-weight: 700; font-size: 15px; padding-top: 8px; margin-top: 4px; }
+        .notes { margin-top: 24px; color: #666; font-size: 11px; }
+        .footer { margin-top: 40px; text-align: center; color: #aaa; font-size: 10px; border-top: 1px solid #eee; padding-top: 12px; }
+        @@media print {
+            .print-actions { display: none; }
+            body { padding: 0; }
+            .invoice-box { border: none; max-width: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-actions">
+        <a href="javascript:history.back()" class="btn-back">Geri</a>
+        <button class="btn-print" onclick="window.print()">Yazdır / PDF</button>
+    </div>
+
+    <div class="invoice-box">
+        <div class="header">
+            <div>
+                <div class="company-name">ASDASD</div>
+                <div>enes abc</div>
+            </div>
+            <div class="doc-title">
+                <h1>@typeTitle</h1>
+                <div class="no">Fatura No: <strong>@Model.InvoiceNumber</strong></div>
+            </div>
+        </div>
+
+        <div class="parties">
+            <div class="party">
+                <h3>@(Model.IsSales ? "Sayın (Alıcı)" : "Satıcı")</h3>
+                <div class="name">@Model.Firm?.Name</div>
+                @if (!string.IsNullOrEmpty(Model.Firm?.Address)) { <div>@Model.Firm.Address</div> }
+                <div>@Model.Firm?.District @(string.IsNullOrEmpty(Model.Firm?.City) ? "" : "/ " + Model.Firm.City)</div>
+                @if (!string.IsNullOrEmpty(Model.Firm?.TaxOffice)) { <div>Vergi Dairesi: @Model.Firm.TaxOffice</div> }
+                @if (!string.IsNullOrEmpty(Model.Firm?.TaxNumber)) { <div>Vergi No: @Model.Firm.TaxNumber</div> }
+            </div>
+            <div class="dates">
+                <div><span>Fatura Tarihi:</span> <strong>@Model.InvoiceDate.ToString("dd.MM.yyyy")</strong></div>
+                @if (Model.ShipmentDate.HasValue) { <div><span>Sevk Tarihi:</span> @Model.ShipmentDate.Value.ToString("dd.MM.yyyy")</div> }
+                @if (Model.DueDate.HasValue) { <div><span>Vade Tarihi:</span> @Model.DueDate.Value.ToString("dd.MM.yyyy")</div> }
+                <div><span>Döviz:</span> @Model.Currency</div>
+            </div>
+        </div>
+
+        <table class="lines">
+            <thead>
+                <tr>
+                    <th style="width:30px">#</th>
+                    <th>Ürün / Hizmet</th>
+                    <th class="num">Miktar</th>
+                    <th>Birim</th>
+                    <th class="num">Birim Fiyat</th>
+                    <th class="num">KDV %</th>
+                    <th class="num">KDV Tutarı</th>
+                    <th class="num">Tutar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Lines.Count; i++)
+                {
+                    var line = Model.Lines[i];
+                    <tr>
+                        <td>@(i + 1)</td>
+                        <td>@line.ItemName</td>
+                        <td class="num">@line.Quantity.ToString("0.##")</td>
+                        <td>@line.Unit</td>
+                        <td class="num">@line.UnitPrice.ToString("N2")</td>
+                        <td class="num">%@line.VatRate.ToString("0")</td>
+                        <td class="num">@line.VatAmount.ToString("N2")</td>
+                        <td class="num">@line.LineTotal.ToString("N2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <div class="row"><span>Ara Toplam</span><span>@Model.SubTotal.ToString("N2") ₺</span></div>
+            @if (Model.DiscountTotal > 0)
+            {
+                <div class="row"><span>Toplam İndirim</span><span>-@Model.DiscountTotal.ToString("N2") ₺</span></div>
+            }
+            <div class="row"><span>Toplam KDV</span><span>@Model.VatTotal.ToString("N2") ₺</span></div>
+            <div class="row grand"><span>Genel Toplam</span><span>@Model.GrandTotal.ToString("N2") ₺</span></div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="notes"><strong>Açıklama:</strong> @Model.Description</div>
+        }
+
+        <div class="footer">
+            Bu belge Logo İşbaşı klonu ile oluşturulmuştur. | @Model.InvoiceNumber | @DateTime.Now.ToString("dd.MM.yyyy HH:mm")
+        </div>
+    </div>
+</body>
+</html>

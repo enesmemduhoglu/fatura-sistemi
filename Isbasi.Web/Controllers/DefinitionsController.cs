@@ -95,6 +95,7 @@ public class DefinitionsController : Controller
         if (!string.IsNullOrWhiteSpace(q))
             query = query.Where(p => p.Name.Contains(q) || (p.Code != null && p.Code.Contains(q)));
         ViewBag.Query = q;
+        ViewBag.Stocks = await StockCalculator.Compute(_db);
         return View(await query.OrderBy(p => p.Name).ToListAsync());
     }
 

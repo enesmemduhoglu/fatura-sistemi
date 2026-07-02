@@ -139,6 +139,66 @@ public class InvoiceController : Controller
         return RedirectToList(model.Type);
     }
 
+    [HttpGet("print/{id:int}")]
+    public async Task<IActionResult> Print(int id)
+    {
+        var invoice = await _db.Invoices.AsNoTracking()
+            .Include(i => i.Firm)
+            .Include(i => i.Lines)
+            .FirstOrDefaultAsync(i => i.Id == id);
+        if (invoice == null) return NotFound();
+        return View(invoice);
+    }
+
+    [HttpGet("export")]
+    public async Task<IActionResult> Export(string mode = "Sales", string? status = null, string? q = null,
+        DateTime? start = null, DateTime? end = null)
+    {
+        var query = _db.Invoices.AsNoTracking().Include(i => i.Firm).Include(i => i.Payments).AsQueryable();
+        query = mode switch
+        {
+            "Sales" => query.Where(i => i.Type == InvoiceType.SalesWholesale || i.Type == InvoiceType.SalesRetail),
+            "Purchase" => query.Where(i => i.Type == InvoiceType.Purchase),
+            _ => query.Where(i => i.Type == InvoiceType.Expense)
+        };
+        if (status == "Open") query = query.Where(i => i.Status == InvoiceStatus.Open);
+        else if (status == "Paid") query = query.Where(i => i.Status == InvoiceStatus.Paid);
+        if (!string.IsNullOrWhiteSpace(q))
+            query = query.Where(i => i.Firm!.Name.Contains(q) || i.InvoiceNumber.Contains(q));
+        if (start.HasValue) query = query.Where(i => i.InvoiceDate >= start.Value);
+        if (end.HasValue) query = query.Where(i => i.InvoiceDate < end.Value.AddDays(1));
+
+        var invoices = await query.OrderByDescending(i => i.InvoiceDate).ToListAsync();
+
+        // Türkçe Excel: noktalı virgül ayırıcı + UTF-8 BOM
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Fatura No;Firma;Fatura Tipi;Fatura Tarihi;Vade Tarihi;Matrah;KDV;Genel Toplam;Tahsil Edilen;Durum");
+        foreach (var i in invoices)
+        {
+            string typeName = i.Type switch
+            {
+                InvoiceType.SalesWholesale => "Toptan (KDV Hariç)",
+                InvoiceType.SalesRetail => "Perakende (KDV Dahil)",
+                InvoiceType.Expense => "Gider",
+                _ => "Alış"
+            };
+            string firmName = (i.Firm?.Name ?? "").Replace(";", ",");
+            sb.AppendLine($"{i.InvoiceNumber};{firmName};{typeName};{i.InvoiceDate:dd.MM.yyyy};" +
+                $"{i.DueDate:dd.MM.yyyy};{i.GrandTotal - i.VatTotal:N2};{i.VatTotal:N2};{i.GrandTotal:N2};" +
+                $"{i.PaidTotal:N2};{(i.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık")}");
+        }
+
+        string fileName = mode switch
+        {
+            "Sales" => "satis-faturalari",
+            "Purchase" => "alis-faturalari",
+            _ => "giderler"
+        };
+        var bytes = System.Text.Encoding.UTF8.GetPreamble()
+            .Concat(System.Text.Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
+        return File(bytes, "text/csv", $"{fileName}-{DateTime.Today:yyyyMMdd}.csv");
+    }
+
     [HttpPost("delete/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)

@@ -8,6 +8,8 @@
     <h1 class="page-title">@ViewData["Title"]</h1>
     <div class="d-flex align-items-center gap-3">
         <span class="trial-note">Deneme sürenizin bitmesine 14 gün kalmıştır. <span class="trial-icon"><i class="fas fa-gift"></i></span></span>
+        <a href="/invoice/export?mode=@Model.Mode&status=@Model.Status&q=@Model.Query&start=@(Model.StartDate?.ToString("yyyy-MM-dd"))&end=@(Model.EndDate?.ToString("yyyy-MM-dd"))"
+           class="btn btn-excel btn-sm"><i class="fas fa-file-excel me-1"></i> Excel'e Aktar</a>
     </div>
 </div>
 
@@ -121,6 +123,7 @@
                             </td>
                             <td class="text-end">
                                 <a href="/payment/add?invoiceId=@invoice.Id" class="btn btn-sm btn-outline-success" title="@(Model.IsSales ? "Tahsilat Ekle" : "Ödeme Ekle")"><i class="fas fa-money-bill"></i></a>
+                                <a href="/invoice/print/@invoice.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Yazdır"><i class="fas fa-print"></i></a>
                                 <a href="@editUrl" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
                                 <form method="post" action="/invoice/delete/@invoice.Id" class="d-inline"
                                       onsubmit="return confirm('@invoice.InvoiceNumber numaralı fatura silinsin mi?');">

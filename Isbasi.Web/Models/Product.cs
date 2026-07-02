@@ -25,6 +25,7 @@ public class Product
     [Display(Name = "KDV Oranı (%)")]
     public decimal VatRate { get; set; } = 20;
 
-    [Display(Name = "Stok Miktarı")]
+    // Açılış stoku; güncel stok fatura hareketleriyle StockCalculator'da hesaplanır
+    [Display(Name = "Açılış Stok Miktarı")]
     public decimal StockAmount { get; set; }
 }

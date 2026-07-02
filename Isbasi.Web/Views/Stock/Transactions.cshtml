@@ -1,0 +1,112 @@
+@model List<InvoiceLine>
+@{
+    ViewData["Title"] = "Stok Hareketleri";
+    var products = (List<Product>)ViewBag.Products;
+    var stocks = (Dictionary<int, decimal>)ViewBag.Stocks;
+    int? selectedProductId = ViewBag.ProductId;
+}
+
+<div class="page-header">
+    <h1 class="page-title">Stok Hareketleri</h1>
+</div>
+
+<div class="portlet">
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-4">
+            <select name="productId" class="form-select" onchange="this.form.submit()">
+                <option value="">Tüm Ürünler</option>
+                @foreach (var product in products)
+                {
+                    <option value="@product.Id" selected="@(product.Id == selectedProductId)">@product.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="date" name="start" value="@((ViewBag.Start as DateTime?)?.ToString("yyyy-MM-dd"))" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <input type="date" name="end" value="@((ViewBag.End as DateTime?)?.ToString("yyyy-MM-dd"))" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-secondary w-100">Filtrele</button>
+        </div>
+    </form>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="fas fa-history"></i>
+            <div class="title">Stok hareketi bulunamadı</div>
+            <div>Ürünlü satış ya da alış faturası oluşturduğunuzda hareketler burada listelenir.</div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Fatura No</th>
+                        <th>Firma</th>
+                        <th>Ürün</th>
+                        <th>Hareket</th>
+                        <th class="text-end">Miktar</th>
+                        <th>Birim</th>
+                        <th class="text-end">Birim Fiyat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var line in Model)
+                    {
+                        bool isOut = line.Invoice!.IsSales;
+                        <tr>
+                            <td>@line.Invoice.InvoiceDate.ToString("dd.MM.yyyy")</td>
+                            <td><a href="/invoice/print/@line.InvoiceId" target="_blank" class="text-decoration-none">@line.Invoice.InvoiceNumber</a></td>
+                            <td>@line.Invoice.Firm?.Name</td>
+                            <td class="fw-medium">@line.ItemName</td>
+                            <td>
+                                <span class="status-badge @(isOut ? "status-open" : "status-paid")">
+                                    <i class="fas @(isOut ? "fa-arrow-up" : "fa-arrow-down") me-1"></i>@(isOut ? "Çıkış (Satış)" : "Giriş (Alış)")
+                                </span>
+                            </td>
+                            <td class="text-end fw-medium @(isOut ? "text-danger" : "text-success")">@(isOut ? "-" : "+")@line.Quantity.ToString("0.##")</td>
+                            <td>@line.Unit</td>
+                            <td class="text-end">@line.UnitPrice.ToString("N2") ₺</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<div class="portlet">
+    <div class="portlet-title">Güncel Stok Durumu</div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle" style="max-width:760px">
+            <thead>
+                <tr>
+                    <th>Ürün Kodu</th>
+                    <th>Ürün Adı</th>
+                    <th class="text-end">Açılış Stok</th>
+                    <th class="text-end">Güncel Stok</th>
+                    <th>Birim</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in products)
+                {
+                    decimal current = stocks.GetValueOrDefault(product.Id, product.StockAmount);
+                    <tr>
+                        <td>@product.Code</td>
+                        <td class="fw-medium">@product.Name</td>
+                        <td class="text-end">@product.StockAmount.ToString("0.##")</td>
+                        <td class="text-end fw-bold @(current < 0 ? "text-danger" : "")">@current.ToString("0.##")</td>
+                        <td>@product.Unit</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
