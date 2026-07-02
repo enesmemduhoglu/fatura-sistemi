@@ -6,7 +6,8 @@ public enum InvoiceType
 {
     [Display(Name = "Toptan Satış Faturası (KDV Hariç)")] SalesWholesale = 0,
     [Display(Name = "Perakende Satış Faturası (KDV Dahil)")] SalesRetail = 1,
-    [Display(Name = "Alış Faturası")] Purchase = 2
+    [Display(Name = "Alış Faturası")] Purchase = 2,
+    [Display(Name = "Gider Faturası")] Expense = 3
 }
 
 public enum InvoiceStatus
@@ -69,5 +70,5 @@ public class Invoice
 
     public List<InvoiceLine> Lines { get; set; } = new();
 
-    public bool IsSales => Type != InvoiceType.Purchase;
+    public bool IsSales => Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail;
 }

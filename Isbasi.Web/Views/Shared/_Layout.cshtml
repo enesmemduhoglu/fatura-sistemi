@@ -28,6 +28,7 @@
                 <li><a class="dropdown-item" href="/invoice/sales/edit?type=Gross"><i class="fas fa-file-invoice me-2"></i>Toptan Satış Faturası</a></li>
                 <li><a class="dropdown-item" href="/invoice/sales/edit?type=Net"><i class="fas fa-file-invoice me-2"></i>Perakende Satış Faturası</a></li>
                 <li><a class="dropdown-item" href="/invoice/purchase/edit"><i class="fas fa-file-invoice me-2"></i>Alış Faturası</a></li>
+                <li><a class="dropdown-item" href="/invoice/purchaseservices/edit"><i class="fas fa-file-invoice me-2"></i>Gider Faturası</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="/definitions/firm/edit"><i class="fas fa-user-friends me-2"></i>Yeni Müşteri/Tedarikçi</a></li>
                 <li><a class="dropdown-item" href="/definitions/product/edit"><i class="fas fa-barcode me-2"></i>Yeni Ürün</a></li>
@@ -62,7 +63,7 @@
                     <li><a href="/comingsoon?title=Verilen Serbest Meslek Makbuzu"><i class="fas fa-file-invoice"></i><span>Verilen Serbest Meslek Makbuzu</span></a></li>
                 </ul>
             </li>
-            <li class="menu-item has-sub @Active("/invoice/purchase")">
+            <li class="menu-item has-sub @(currentPath.StartsWith("/invoice/purchase") && !currentPath.StartsWith("/invoice/purchaseservices") ? "active" : "")">
                 <a href="#" class="menu-toggle"><i class="fas fa-file-invoice"></i><span>Alışlar</span><i class="fas fa-angle-right arrow"></i></a>
                 <ul class="submenu">
                     <li><a href="/invoice/purchase"><i class="fas fa-file-invoice"></i><span>Alış Faturaları</span></a></li>
@@ -70,8 +71,8 @@
                     <li><a href="/comingsoon?title=Alınan Serbest Meslek Makbuzu"><i class="fas fa-file-invoice"></i><span>Alınan Serbest Meslek Makbuzu</span></a></li>
                 </ul>
             </li>
-            <li class="menu-item">
-                <a href="/comingsoon?title=Giderler"><i class="fas fa-file-invoice"></i><span>Giderler</span></a>
+            <li class="menu-item @Active("/invoice/purchaseservices")">
+                <a href="/invoice/purchaseservices"><i class="fas fa-file-invoice"></i><span>Giderler</span></a>
             </li>
             <li class="menu-item @Active("/definitions/firm")">
                 <a href="/definitions/firm"><i class="fas fa-user-friends"></i><span>Müşteri &amp; Tedarikçi</span></a>
@@ -84,12 +85,12 @@
                     <li><a href="/comingsoon?title=Stok Hareketleri"><i class="fas fa-history"></i><span>Stok Hareketleri</span></a></li>
                 </ul>
             </li>
-            <li class="menu-item has-sub">
+            <li class="menu-item has-sub @Active("/cash")@Active("/definitions/safe")@Active("/definitions/bank")">
                 <a href="#" class="menu-toggle"><i class="fas fa-money-bill"></i><span>Para</span><i class="fas fa-angle-right arrow"></i></a>
                 <ul class="submenu">
-                    <li><a href="/comingsoon?title=Nakit Durumu"><i class="fas fa-money-bill-wave"></i><span>Nakit Durumu</span></a></li>
-                    <li><a href="/comingsoon?title=Kasalar"><i class="fas fa-cash-register"></i><span>Kasalar</span></a></li>
-                    <li><a href="/comingsoon?title=Banka Hesapları"><i class="fas fa-university"></i><span>Banka Hesapları</span></a></li>
+                    <li><a href="/cash/cashstatus"><i class="fas fa-money-bill-wave"></i><span>Nakit Durumu</span></a></li>
+                    <li><a href="/definitions/safe"><i class="fas fa-cash-register"></i><span>Kasalar</span></a></li>
+                    <li><a href="/definitions/bank"><i class="fas fa-university"></i><span>Banka Hesapları</span></a></li>
                     <li><a href="/comingsoon?title=Banka Mutabakatı"><i class="fas fa-university"></i><span>Banka Mutabakatı</span></a></li>
                     <li><a href="/comingsoon?title=Çekler"><i class="fas fa-money-check"></i><span>Çekler</span></a></li>
                 </ul>

@@ -1,7 +1,7 @@
 @model InvoiceListViewModel
 @{
-    ViewData["Title"] = Model.IsSales ? "Satış Faturaları" : "Alış Faturaları";
-    string baseUrl = Model.IsSales ? "/invoice/sales" : "/invoice/purchase";
+    ViewData["Title"] = Model.Title;
+    string baseUrl = Model.BaseUrl;
 }
 
 <div class="page-header">
@@ -43,6 +43,10 @@
                     </ul>
                 </div>
             }
+            else if (Model.IsExpense)
+            {
+                <a href="/invoice/purchaseservices/edit" class="btn btn-isbasi">Yeni Gider Faturası</a>
+            }
             else
             {
                 <a href="/invoice/purchase/edit" class="btn btn-isbasi">Yeni Alış Faturası</a>
@@ -70,7 +74,7 @@
         <div class="empty-state">
             <i class="fas fa-file-invoice"></i>
             <div class="title">Henüz fatura bulunmuyor</div>
-            <div>@(Model.IsSales ? "\"Yeni Satış\" butonu ile ilk faturanızı oluşturun." : "\"Yeni Alış Faturası\" butonu ile ilk faturanızı oluşturun.")</div>
+            <div>@(Model.IsSales ? "\"Yeni Satış\" butonu ile ilk faturanızı oluşturun." : Model.IsExpense ? "\"Yeni Gider Faturası\" butonu ile ilk giderinizi oluşturun." : "\"Yeni Alış Faturası\" butonu ile ilk faturanızı oluşturun.")</div>
         </div>
     }
     else
@@ -92,9 +96,7 @@
                 <tbody>
                     @foreach (var invoice in Model.Invoices)
                     {
-                        string editUrl = Model.IsSales
-                            ? $"/invoice/sales/edit?id={invoice.Id}"
-                            : $"/invoice/purchase/edit?id={invoice.Id}";
+                        string editUrl = $"{baseUrl}/edit?id={invoice.Id}";
                         <tr>
                             <td class="fw-medium">@invoice.InvoiceNumber</td>
                             <td>@invoice.Firm?.Name</td>
@@ -103,6 +105,7 @@
                                 {
                                     InvoiceType.SalesWholesale => "Toptan (KDV Hariç)",
                                     InvoiceType.SalesRetail => "Perakende (KDV Dahil)",
+                                    InvoiceType.Expense => "Gider",
                                     _ => "Alış"
                                 })
                             </td>

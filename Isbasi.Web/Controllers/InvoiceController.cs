@@ -15,16 +15,25 @@ public class InvoiceController : Controller
 
     [HttpGet("sales")]
     public Task<IActionResult> Sales(string? status, string? q, DateTime? start, DateTime? end)
-        => List(isSales: true, status, q, start, end);
+        => List("Sales", status, q, start, end);
 
     [HttpGet("purchase")]
     public Task<IActionResult> Purchase(string? status, string? q, DateTime? start, DateTime? end)
-        => List(isSales: false, status, q, start, end);
+        => List("Purchase", status, q, start, end);
 
-    private async Task<IActionResult> List(bool isSales, string? status, string? q, DateTime? start, DateTime? end)
+    [HttpGet("purchaseservices")]
+    public Task<IActionResult> Expenses(string? status, string? q, DateTime? start, DateTime? end)
+        => List("Expense", status, q, start, end);
+
+    private async Task<IActionResult> List(string mode, string? status, string? q, DateTime? start, DateTime? end)
     {
-        var query = _db.Invoices.AsNoTracking().Include(i => i.Firm)
-            .Where(i => isSales ? i.Type != InvoiceType.Purchase : i.Type == InvoiceType.Purchase);
+        var query = _db.Invoices.AsNoTracking().Include(i => i.Firm).AsQueryable();
+        query = mode switch
+        {
+            "Sales" => query.Where(i => i.Type == InvoiceType.SalesWholesale || i.Type == InvoiceType.SalesRetail),
+            "Purchase" => query.Where(i => i.Type == InvoiceType.Purchase),
+            _ => query.Where(i => i.Type == InvoiceType.Expense)
+        };
 
         if (status == "Open") query = query.Where(i => i.Status == InvoiceStatus.Open);
         else if (status == "Paid") query = query.Where(i => i.Status == InvoiceStatus.Paid);
@@ -37,7 +46,7 @@ public class InvoiceController : Controller
 
         var vm = new InvoiceListViewModel
         {
-            IsSales = isSales,
+            Mode = mode,
             Status = status,
             Query = q,
             StartDate = start,
@@ -55,6 +64,10 @@ public class InvoiceController : Controller
     [HttpGet("purchase/edit")]
     public Task<IActionResult> EditPurchase(int? id)
         => Edit(id, InvoiceType.Purchase);
+
+    [HttpGet("purchaseservices/edit")]
+    public Task<IActionResult> EditExpense(int? id)
+        => Edit(id, InvoiceType.Expense);
 
     private async Task<IActionResult> Edit(int? id, InvoiceType type)
     {
@@ -116,13 +129,14 @@ public class InvoiceController : Controller
 
         if (submitAction == "saveAndNew")
         {
-            return model.Type == InvoiceType.Purchase
-                ? RedirectToAction(nameof(EditPurchase))
-                : RedirectToAction(nameof(EditSales), new { type = model.Type == InvoiceType.SalesRetail ? "Net" : "Gross" });
+            return model.Type switch
+            {
+                InvoiceType.Purchase => RedirectToAction(nameof(EditPurchase)),
+                InvoiceType.Expense => RedirectToAction(nameof(EditExpense)),
+                _ => RedirectToAction(nameof(EditSales), new { type = model.Type == InvoiceType.SalesRetail ? "Net" : "Gross" })
+            };
         }
-        return model.Type == InvoiceType.Purchase
-            ? RedirectToAction(nameof(Purchase))
-            : RedirectToAction(nameof(Sales));
+        return RedirectToList(model.Type);
     }
 
     [HttpPost("delete/{id:int}")]
@@ -132,12 +146,19 @@ public class InvoiceController : Controller
         var invoice = await _db.Invoices.FindAsync(id);
         if (invoice == null) return NotFound();
 
-        bool isSales = invoice.IsSales;
+        var type = invoice.Type;
         _db.Invoices.Remove(invoice);
         await _db.SaveChangesAsync();
         TempData["Success"] = "Fatura silindi.";
-        return isSales ? RedirectToAction(nameof(Sales)) : RedirectToAction(nameof(Purchase));
+        return RedirectToList(type);
     }
+
+    private IActionResult RedirectToList(InvoiceType type) => type switch
+    {
+        InvoiceType.Purchase => RedirectToAction(nameof(Purchase)),
+        InvoiceType.Expense => RedirectToAction(nameof(Expenses)),
+        _ => RedirectToAction(nameof(Sales))
+    };
 
     private async Task<string> NextInvoiceNumber()
     {
@@ -157,25 +178,17 @@ public class InvoiceController : Controller
 
     private async Task FillEditViewBags(Invoice invoice)
     {
-        bool isSales = invoice.Type != InvoiceType.Purchase;
+        bool isSales = invoice.IsSales;
+        bool isExpense = invoice.Type == InvoiceType.Expense;
+
         ViewBag.Firms = await _db.Firms.AsNoTracking()
             .Where(f => isSales ? f.IsCustomer : f.IsSupplier)
             .OrderBy(f => f.Name)
             .ToListAsync();
 
-        // select2 + otomatik doldurma için ürün/hizmet kataloğu
-        var products = await _db.Products.AsNoTracking().OrderBy(p => p.Name).ToListAsync();
+        // select2 + otomatik doldurma için ürün/hizmet kataloğu (giderlerde sadece hizmet/masraf)
         var services = await _db.Services.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
-        ViewBag.Items = products.Select(p => new
-        {
-            key = $"p{p.Id}",
-            productId = (int?)p.Id,
-            serviceId = (int?)null,
-            name = p.Name,
-            unit = p.Unit,
-            price = isSales ? p.SalePrice : p.PurchasePrice,
-            vatRate = p.VatRate
-        }).Concat(services.Select(s => new
+        var items = services.Select(s => new
         {
             key = $"s{s.Id}",
             productId = (int?)null,
@@ -184,6 +197,22 @@ public class InvoiceController : Controller
             unit = s.Unit,
             price = s.Price,
             vatRate = s.VatRate
-        })).ToList();
+        }).ToList();
+
+        if (!isExpense)
+        {
+            var products = await _db.Products.AsNoTracking().OrderBy(p => p.Name).ToListAsync();
+            items = products.Select(p => new
+            {
+                key = $"p{p.Id}",
+                productId = (int?)p.Id,
+                serviceId = (int?)null,
+                name = p.Name,
+                unit = p.Unit,
+                price = isSales ? p.SalePrice : p.PurchasePrice,
+                vatRate = p.VatRate
+            }).Concat(items).ToList();
+        }
+        ViewBag.Items = items;
     }
 }

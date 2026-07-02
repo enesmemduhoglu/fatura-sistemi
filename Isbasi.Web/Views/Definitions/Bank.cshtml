@@ -1,0 +1,60 @@
+@model List<BankAccount>
+@{
+    ViewData["Title"] = "Banka Hesapları";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Banka Hesapları</h1>
+    <a href="/definitions/bank/edit" class="btn btn-isbasi"><i class="fas fa-plus me-1"></i> Yeni Banka Hesabı</a>
+</div>
+
+<div class="portlet">
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="fas fa-university"></i>
+            <div class="title">Kayıtlı banka hesabı bulunamadı</div>
+            <div>"Yeni Banka Hesabı" butonu ile ilk hesabınızı oluşturun.</div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Hesap Adı</th>
+                        <th>Banka</th>
+                        <th>Şube</th>
+                        <th>IBAN</th>
+                        <th>Döviz</th>
+                        <th class="text-end">Bakiye</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var bank in Model)
+                    {
+                        <tr>
+                            <td class="fw-medium"><i class="fas fa-university me-2 text-muted"></i>@bank.Name</td>
+                            <td>@bank.BankName</td>
+                            <td>@bank.Branch</td>
+                            <td class="small">@bank.Iban</td>
+                            <td>@bank.Currency</td>
+                            <td class="text-end fw-medium">@bank.OpeningBalance.ToString("N2") ₺</td>
+                            <td class="text-end">
+                                <a href="/definitions/bank/edit?id=@bank.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
+                                <form method="post" action="/definitions/bank/delete/@bank.Id" class="d-inline"
+                                      onsubmit="return confirm('@bank.Name silinsin mi?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="text-muted small">Toplam banka bakiyesi: <strong>@Model.Sum(b => b.OpeningBalance).ToString("N2") ₺</strong></div>
+    }
+</div>

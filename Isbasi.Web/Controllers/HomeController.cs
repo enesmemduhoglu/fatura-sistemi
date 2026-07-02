@@ -19,7 +19,12 @@ public class HomeController : Controller
             .Where(i => i.InvoiceDate.Year == year)
             .ToListAsync();
 
-        var vm = new DashboardViewModel { Year = year };
+        var vm = new DashboardViewModel
+        {
+            Year = year,
+            Safes = await _db.Safes.AsNoTracking().OrderBy(s => s.Name).ToListAsync(),
+            Banks = await _db.BankAccounts.AsNoTracking().OrderBy(b => b.Name).ToListAsync()
+        };
 
         foreach (var inv in invoices)
         {

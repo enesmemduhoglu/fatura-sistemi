@@ -1,17 +1,29 @@
 @model Invoice
 @using System.Text.Json
 @{
-    bool isSales = Model.Type != InvoiceType.Purchase;
+    bool isSales = Model.IsSales;
     bool vatIncluded = Model.Type == InvoiceType.SalesRetail;
     string typeTitle = Model.Type switch
     {
         InvoiceType.SalesWholesale => "Toptan Satış Faturası",
         InvoiceType.SalesRetail => "Perakende Satış Faturası",
+        InvoiceType.Expense => "Gider Faturası",
         _ => "Alış Faturası"
     };
-    string vatNote = Model.Type == InvoiceType.Purchase ? "" : (vatIncluded ? "(KDV Dahil)" : "(KDV Hariç)");
+    string vatNote = isSales ? (vatIncluded ? "(KDV Dahil)" : "(KDV Hariç)") : "";
     ViewData["Title"] = typeTitle;
-    string listUrl = isSales ? "/invoice/sales" : "/invoice/purchase";
+    string listUrl = Model.Type switch
+    {
+        InvoiceType.Purchase => "/invoice/purchase",
+        InvoiceType.Expense => "/invoice/purchaseservices",
+        _ => "/invoice/sales"
+    };
+    string listTitle = Model.Type switch
+    {
+        InvoiceType.Purchase => "Alış Faturaları",
+        InvoiceType.Expense => "Giderler",
+        _ => "Satış Faturaları"
+    };
     var firms = (List<Firm>)ViewBag.Firms;
     string itemsJson = JsonSerializer.Serialize(ViewBag.Items);
     string firmsJson = JsonSerializer.Serialize(firms.Select(f => new
@@ -29,7 +41,7 @@
 
     <div class="page-header">
         <h1 class="page-title">
-            <span class="breadcrumb-part"><a href="@listUrl" class="text-decoration-none">@(isSales ? "Satış Faturaları" : "Alış Faturaları")</a> &gt;</span>
+            <span class="breadcrumb-part"><a href="@listUrl" class="text-decoration-none">@listTitle</a> &gt;</span>
             @typeTitle <small class="text-muted">@vatNote</small>
         </h1>
         <div class="d-flex gap-2">

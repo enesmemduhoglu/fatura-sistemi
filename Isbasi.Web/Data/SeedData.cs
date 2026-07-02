@@ -39,6 +39,13 @@ public static class SeedData
             new() { Code = "HZM-002", Name = "Nakliye", Unit = "Sefer", Price = 2500, VatRate = 20 }
         };
         db.Services.AddRange(services);
+
+        db.Safes.Add(new Safe { Name = "Merkez Kasa", OpeningBalance = 2500 });
+        db.BankAccounts.Add(new BankAccount
+        {
+            Name = "Vadesiz TL Hesabı", BankName = "İş Bankası", Branch = "Kadıköy",
+            Iban = "TR12 0006 4000 0011 2345 6789 01", OpeningBalance = 15000
+        });
         db.SaveChanges();
 
         var year = DateTime.Today.Year;
@@ -86,6 +93,17 @@ public static class SeedData
             Line(products[3], 100, sales: false)));
         invoices.Add(MakeInvoice(InvoiceType.Purchase, firms[3], new DateTime(year, 5, 25),
             Line(products[2], 10, sales: false)));
+
+        InvoiceLine ServiceLine(Service s, decimal qty) => new()
+        {
+            ServiceId = s.Id, ItemName = s.Name, Quantity = qty, Unit = s.Unit,
+            UnitPrice = s.Price, VatRate = s.VatRate
+        };
+
+        invoices.Add(MakeInvoice(InvoiceType.Expense, firms[3], new DateTime(year, 2, 20),
+            ServiceLine(services[1], 2)));
+        invoices.Add(MakeInvoice(InvoiceType.Expense, firms[3], new DateTime(year, 4, 15),
+            ServiceLine(services[0], 5)));
 
         db.Invoices.AddRange(invoices);
         db.SaveChanges();

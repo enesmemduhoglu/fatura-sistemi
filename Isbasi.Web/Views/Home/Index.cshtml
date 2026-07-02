@@ -181,14 +181,14 @@
 
 <!-- Toplam Nakit -->
 <div class="portlet">
-    <div class="total-cash-bar mb-3"><i class="fas fa-camera"></i> TOPLAM NAKİT <span>0,00 TL</span></div>
+    <div class="total-cash-bar mb-3"><i class="fas fa-camera"></i> TOPLAM NAKİT <span>@Model.TotalCash.ToString("N2") TL</span></div>
     <div class="table-responsive">
         <table class="table mb-0" style="max-width:560px">
             <thead>
                 <tr><th>DÖVİZ CİNSİ</th><th class="text-end">BAKİYE</th><th class="text-end">BAKİYE TL</th></tr>
             </thead>
             <tbody>
-                <tr><td>TL</td><td class="text-end">0,00 TL</td><td class="text-end fw-medium">0,00 TL</td></tr>
+                <tr><td>TL</td><td class="text-end">@Model.TotalCash.ToString("N2") TL</td><td class="text-end fw-medium">@Model.TotalCash.ToString("N2") TL</td></tr>
             </tbody>
         </table>
     </div>
@@ -199,17 +199,41 @@
     <div class="text-center fw-semibold mb-3" style="background:#d7ecfb;padding:10px;border-radius:4px">KASALAR ve BANKALAR</div>
     <div class="row g-3">
         <div class="col-md-4">
-            <div class="mini-stat-header"><span><i class="fas fa-cash-register me-2"></i>KASALAR</span><span>0,00TL</span></div>
+            <div class="mini-stat-header"><span><i class="fas fa-cash-register me-2"></i>KASALAR</span><span>@Model.SafeTotal.ToString("N2")TL</span></div>
             <table class="table table-sm mt-2 mb-0">
                 <thead><tr><th>KASA ADI</th><th class="text-end">BAKİYE</th><th class="text-end">BAKİYE TL</th></tr></thead>
-                <tbody><tr><td><i class="fas fa-cash-register me-1 text-muted"></i>Merkez Kasa</td><td class="text-end">0,00 TL</td><td class="text-end">0,00 TL</td></tr></tbody>
+                <tbody>
+                    @if (Model.Safes.Count == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted text-center py-3">Kasa bulunmuyor</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var safe in Model.Safes)
+                        {
+                            <tr><td><i class="fas fa-cash-register me-1 text-muted"></i>@safe.Name</td><td class="text-end">@safe.OpeningBalance.ToString("N2") TL</td><td class="text-end">@safe.OpeningBalance.ToString("N2") TL</td></tr>
+                        }
+                    }
+                </tbody>
             </table>
         </div>
         <div class="col-md-4">
-            <div class="mini-stat-header"><span><i class="fas fa-university me-2"></i>BANKALAR</span><span>0,00TL</span></div>
+            <div class="mini-stat-header"><span><i class="fas fa-university me-2"></i>BANKALAR</span><span>@Model.BankTotal.ToString("N2")TL</span></div>
             <table class="table table-sm mt-2 mb-0">
                 <thead><tr><th>HESAP ADI</th><th class="text-end">BAKİYE</th><th class="text-end">BAKİYE TL</th></tr></thead>
-                <tbody><tr><td colspan="3" class="text-muted text-center py-3">Banka hesabı bulunmuyor</td></tr></tbody>
+                <tbody>
+                    @if (Model.Banks.Count == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted text-center py-3">Banka hesabı bulunmuyor</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var bank in Model.Banks)
+                        {
+                            <tr><td><i class="fas fa-university me-1 text-muted"></i>@bank.Name</td><td class="text-end">@bank.OpeningBalance.ToString("N2") TL</td><td class="text-end">@bank.OpeningBalance.ToString("N2") TL</td></tr>
+                        }
+                    }
+                </tbody>
             </table>
         </div>
         <div class="col-md-4">

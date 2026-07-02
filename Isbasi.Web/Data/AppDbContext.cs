@@ -12,6 +12,8 @@ public class AppDbContext : DbContext
     public DbSet<Service> Services => Set<Service>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
+    public DbSet<Safe> Safes => Set<Safe>();
+    public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

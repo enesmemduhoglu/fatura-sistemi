@@ -35,7 +35,7 @@ public class DefinitionsController : Controller
             .GroupBy(i => i.FirmId)
             .ToDictionary(
                 g => g.Key,
-                g => g.Sum(i => i.Type == InvoiceType.Purchase ? -i.GrandTotal : i.GrandTotal));
+                g => g.Sum(i => i.Type is InvoiceType.Purchase or InvoiceType.Expense ? -i.GrandTotal : i.GrandTotal));
         ViewBag.Balances = balances;
         ViewBag.Query = q;
         ViewBag.Role = role;
@@ -137,6 +137,82 @@ public class DefinitionsController : Controller
             TempData["Success"] = "Ürün silindi.";
         }
         return RedirectToAction(nameof(Product));
+    }
+
+    // ---- Kasalar ----
+
+    [HttpGet("safe")]
+    public async Task<IActionResult> Safe()
+        => View(await _db.Safes.AsNoTracking().OrderBy(s => s.Name).ToListAsync());
+
+    [HttpGet("safe/edit")]
+    public async Task<IActionResult> SafeEdit(int? id)
+    {
+        var safe = id.HasValue ? await _db.Safes.FindAsync(id.Value) : new Safe();
+        if (safe == null) return NotFound();
+        return View(safe);
+    }
+
+    [HttpPost("safe/edit")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SafeEdit(Safe model)
+    {
+        if (!ModelState.IsValid) return View(model);
+        if (model.Id == 0) _db.Safes.Add(model);
+        else _db.Update(model);
+        await _db.SaveChangesAsync();
+        TempData["Success"] = "Kasa kaydedildi.";
+        return RedirectToAction(nameof(Safe));
+    }
+
+    [HttpPost("safe/delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SafeDelete(int id)
+    {
+        var safe = await _db.Safes.FindAsync(id);
+        if (safe == null) return NotFound();
+        _db.Safes.Remove(safe);
+        await _db.SaveChangesAsync();
+        TempData["Success"] = "Kasa silindi.";
+        return RedirectToAction(nameof(Safe));
+    }
+
+    // ---- Banka Hesapları ----
+
+    [HttpGet("bank")]
+    public async Task<IActionResult> Bank()
+        => View(await _db.BankAccounts.AsNoTracking().OrderBy(b => b.Name).ToListAsync());
+
+    [HttpGet("bank/edit")]
+    public async Task<IActionResult> BankEdit(int? id)
+    {
+        var bank = id.HasValue ? await _db.BankAccounts.FindAsync(id.Value) : new BankAccount();
+        if (bank == null) return NotFound();
+        return View(bank);
+    }
+
+    [HttpPost("bank/edit")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BankEdit(BankAccount model)
+    {
+        if (!ModelState.IsValid) return View(model);
+        if (model.Id == 0) _db.BankAccounts.Add(model);
+        else _db.Update(model);
+        await _db.SaveChangesAsync();
+        TempData["Success"] = "Banka hesabı kaydedildi.";
+        return RedirectToAction(nameof(Bank));
+    }
+
+    [HttpPost("bank/delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BankDelete(int id)
+    {
+        var bank = await _db.BankAccounts.FindAsync(id);
+        if (bank == null) return NotFound();
+        _db.BankAccounts.Remove(bank);
+        await _db.SaveChangesAsync();
+        TempData["Success"] = "Banka hesabı silindi.";
+        return RedirectToAction(nameof(Bank));
     }
 
     // ---- Hizmetler ----

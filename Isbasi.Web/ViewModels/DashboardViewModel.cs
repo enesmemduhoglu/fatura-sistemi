@@ -1,7 +1,15 @@
+using Isbasi.Web.Models;
+
 namespace Isbasi.Web.ViewModels;
 
 public class DashboardViewModel
 {
+    public List<Safe> Safes { get; set; } = new();
+    public List<BankAccount> Banks { get; set; } = new();
+    public decimal SafeTotal => Safes.Sum(s => s.OpeningBalance);
+    public decimal BankTotal => Banks.Sum(b => b.OpeningBalance);
+    public decimal TotalCash => SafeTotal + BankTotal;
+
     public int Year { get; set; }
     public decimal[] MonthlyIncome { get; set; } = new decimal[12];
     public decimal[] MonthlyPayment { get; set; } = new decimal[12];

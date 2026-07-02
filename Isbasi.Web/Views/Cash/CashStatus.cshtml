@@ -1,0 +1,64 @@
+@{
+    ViewData["Title"] = "Nakit Durumu";
+    var safes = (List<Safe>)ViewBag.Safes;
+    var banks = (List<BankAccount>)ViewBag.Banks;
+    decimal safeTotal = safes.Sum(s => s.OpeningBalance);
+    decimal bankTotal = banks.Sum(b => b.OpeningBalance);
+}
+
+<div class="page-header">
+    <h1 class="page-title">Nakit Durumu</h1>
+</div>
+
+<div class="portlet">
+    <div class="total-cash-bar mb-4"><i class="fas fa-money-bill-wave"></i> TOPLAM NAKİT <span>@((safeTotal + bankTotal).ToString("N2")) TL</span></div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="mini-stat-header mb-2"><span><i class="fas fa-cash-register me-2"></i>KASALAR</span><span>@safeTotal.ToString("N2") TL</span></div>
+            <table class="table table-sm align-middle">
+                <thead><tr><th>KASA ADI</th><th class="text-end">BAKİYE</th><th class="text-end">BAKİYE TL</th></tr></thead>
+                <tbody>
+                    @if (safes.Count == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted text-center py-3">Kasa bulunmuyor</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var safe in safes)
+                        {
+                            <tr>
+                                <td><a href="/definitions/safe/edit?id=@safe.Id" class="text-decoration-none"><i class="fas fa-cash-register me-1 text-muted"></i>@safe.Name</a></td>
+                                <td class="text-end">@safe.OpeningBalance.ToString("N2") @safe.Currency</td>
+                                <td class="text-end fw-medium">@safe.OpeningBalance.ToString("N2") TL</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="col-lg-6">
+            <div class="mini-stat-header mb-2"><span><i class="fas fa-university me-2"></i>BANKALAR</span><span>@bankTotal.ToString("N2") TL</span></div>
+            <table class="table table-sm align-middle">
+                <thead><tr><th>HESAP ADI</th><th class="text-end">BAKİYE</th><th class="text-end">BAKİYE TL</th></tr></thead>
+                <tbody>
+                    @if (banks.Count == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted text-center py-3">Banka hesabı bulunmuyor</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var bank in banks)
+                        {
+                            <tr>
+                                <td><a href="/definitions/bank/edit?id=@bank.Id" class="text-decoration-none"><i class="fas fa-university me-1 text-muted"></i>@bank.Name</a></td>
+                                <td class="text-end">@bank.OpeningBalance.ToString("N2") @bank.Currency</td>
+                                <td class="text-end fw-medium">@bank.OpeningBalance.ToString("N2") TL</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

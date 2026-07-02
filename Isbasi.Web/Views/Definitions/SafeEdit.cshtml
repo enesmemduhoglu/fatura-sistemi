@@ -1,0 +1,39 @@
+@model Safe
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Yeni Kasa" : "Kasa Düzenle";
+}
+
+<div class="page-header">
+    <h1 class="page-title"><span class="breadcrumb-part">Kasalar &gt;</span> @ViewData["Title"]</h1>
+</div>
+
+<div class="portlet">
+    <form method="post" action="/definitions/safe/edit">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Name"></label>
+                <input class="form-control" asp-for="Name" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="Currency"></label>
+                <select class="form-select" asp-for="Currency">
+                    <option>TL</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="OpeningBalance"></label>
+                <input class="form-control" asp-for="OpeningBalance" />
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-save"><i class="fas fa-save me-1"></i> Kaydet</button>
+            <a href="/definitions/safe" class="btn btn-cancel"><i class="fas fa-times me-1"></i> Vazgeç</a>
+        </div>
+    </form>
+</div>
