@@ -1,0 +1,278 @@
+@model Invoice
+@using System.Text.Json
+@{
+    bool isSales = Model.Type != InvoiceType.Purchase;
+    bool vatIncluded = Model.Type == InvoiceType.SalesRetail;
+    string typeTitle = Model.Type switch
+    {
+        InvoiceType.SalesWholesale => "Toptan Satış Faturası",
+        InvoiceType.SalesRetail => "Perakende Satış Faturası",
+        _ => "Alış Faturası"
+    };
+    string vatNote = Model.Type == InvoiceType.Purchase ? "" : (vatIncluded ? "(KDV Dahil)" : "(KDV Hariç)");
+    ViewData["Title"] = typeTitle;
+    string listUrl = isSales ? "/invoice/sales" : "/invoice/purchase";
+    var firms = (List<Firm>)ViewBag.Firms;
+    string itemsJson = JsonSerializer.Serialize(ViewBag.Items);
+    string firmsJson = JsonSerializer.Serialize(firms.Select(f => new
+    {
+        id = f.Id, name = f.Name, kind = (int)f.Kind, address = f.Address, country = f.Country,
+        city = f.City, district = f.District, taxOffice = f.TaxOffice, taxNumber = f.TaxNumber
+    }));
+}
+
+<form method="post" action="/invoice/save" id="invoiceForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="Type" />
+    <input type="hidden" asp-for="Currency" />
+
+    <div class="page-header">
+        <h1 class="page-title">
+            <span class="breadcrumb-part"><a href="@listUrl" class="text-decoration-none">@(isSales ? "Satış Faturaları" : "Alış Faturaları")</a> &gt;</span>
+            @typeTitle <small class="text-muted">@vatNote</small>
+        </h1>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-file btn-sm" onclick="alert('Dosya ekleme bu sürümde henüz yok.')"><i class="fas fa-image me-1"></i> Dosya Ekle</button>
+            <button type="submit" name="submitAction" value="saveAndNew" class="btn btn-save-new btn-sm"><i class="fas fa-save me-1"></i> Kaydet ve Yeni Ekle</button>
+            <button type="submit" name="submitAction" value="save" class="btn btn-save btn-sm"><i class="fas fa-save me-1"></i> Kaydet</button>
+            <a href="@listUrl" class="btn btn-cancel btn-sm"><i class="fas fa-times me-1"></i> Vazgeç</a>
+        </div>
+    </div>
+
+    <div class="portlet">
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="row g-4">
+            <!-- Sol: firma bilgileri -->
+            <div class="col-lg-6">
+                <select id="firmSelect" name="FirmId" class="form-select">
+                    <option value="">Firma Ünvanı / Adı Soyadı *</option>
+                    @foreach (var firm in firms)
+                    {
+                        <option value="@firm.Id" selected="@(firm.Id == Model.FirmId)">@firm.Name</option>
+                    }
+                </select>
+                <div class="mt-2 mb-1">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="firmKind" id="firmCorporate" disabled>
+                        <label class="form-check-label" for="firmCorporate">Kurumsal</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="firmKind" id="firmIndividual" disabled>
+                        <label class="form-check-label" for="firmIndividual">Bireysel</label>
+                    </div>
+                </div>
+                <textarea id="firmAddress" class="form-control underline-input" rows="2" placeholder="Adres" readonly></textarea>
+                <input id="firmCountry" class="form-control underline-input mt-2" placeholder="Ülke" readonly>
+                <div class="row g-2 mt-0">
+                    <div class="col-6"><input id="firmCity" class="form-control underline-input" placeholder="İl" readonly></div>
+                    <div class="col-6"><input id="firmDistrict" class="form-control underline-input" placeholder="İlçe" readonly></div>
+                </div>
+                <div class="row g-2 mt-0">
+                    <div class="col-6"><input id="firmTaxOffice" class="form-control underline-input" placeholder="Vergi Dairesi" readonly></div>
+                    <div class="col-6"><input id="firmTaxNumber" class="form-control underline-input" placeholder="Vergi No/T.C. Kimlik No" readonly></div>
+                </div>
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="differentDelivery">
+                    <label class="form-check-label" for="differentDelivery">Teslimat adresi farklı</label>
+                </div>
+            </div>
+
+            <!-- Sağ: fatura genel bilgileri -->
+            <div class="col-lg-6">
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item"><a class="nav-link active text-success fw-medium" href="#">Genel</a></li>
+                    <li class="nav-item"><a class="nav-link text-muted" href="#" onclick="return false;">Diğer</a></li>
+                </ul>
+
+                <div class="row mb-3 align-items-center">
+                    <label class="col-4 form-label mb-0">Fatura Tarihi</label>
+                    <div class="col-8"><input type="date" asp-for="InvoiceDate" asp-format="{0:yyyy-MM-dd}" class="form-control"></div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                    <label class="col-4 form-label mb-0">Sevk Tarihi</label>
+                    <div class="col-8"><input type="date" asp-for="ShipmentDate" asp-format="{0:yyyy-MM-dd}" class="form-control"></div>
+                </div>
+                <div class="row mb-2 align-items-center">
+                    <label class="col-4 form-label mb-0">Vade Tarihi</label>
+                    <div class="col-8"><input type="date" asp-for="DueDate" asp-format="{0:yyyy-MM-dd}" class="form-control" id="dueDateInput"></div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-4"></div>
+                    <div class="col-8 due-buttons d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm" data-days="30">30 gün</button>
+                        <button type="button" class="btn btn-sm" data-days="45">45 gün</button>
+                        <button type="button" class="btn btn-sm" data-days="60">60 gün</button>
+                        <button type="button" class="btn btn-sm" data-days="90">90 gün</button>
+                        <button type="button" class="btn btn-sm" data-days="120">120 gün</button>
+                    </div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                    <label class="col-4 form-label mb-0">Fatura Numarası</label>
+                    <div class="col-8"><input asp-for="InvoiceNumber" class="form-control" placeholder="Boş bırakılırsa otomatik verilir"></div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                    <label class="col-4 form-label mb-0">Döviz</label>
+                    <div class="col-8">
+                        <select class="form-select" disabled><option>TL</option></select>
+                    </div>
+                </div>
+                <div class="row mb-3 align-items-center">
+                    <label class="col-4 form-label mb-0">Kayıt Durumu</label>
+                    <div class="col-8">
+                        <select asp-for="Status" class="form-select">
+                            <option value="Open">Açık</option>
+                            <option value="Paid">Ödendi</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fatura satırları -->
+        <div class="table-responsive mt-4">
+            <table class="table invoice-lines" id="linesTable">
+                <thead>
+                    <tr>
+                        <th style="width:30px">#</th>
+                        <th style="min-width:220px">Ürün</th>
+                        <th style="width:90px" class="text-end">Miktar</th>
+                        <th style="width:90px">Birimi</th>
+                        <th style="width:120px" class="text-end">Birim Fiyat</th>
+                        <th style="width:90px">Vergi</th>
+                        <th style="width:110px" class="text-end">Vergi Tutarı</th>
+                        <th style="width:100px" class="text-end">İndirim</th>
+                        <th style="width:95px">İndirim Tipi</th>
+                        <th style="width:120px" class="text-end">Tutar</th>
+                        <th style="width:40px"></th>
+                    </tr>
+                </thead>
+                <tbody id="linesBody">
+                    @for (int i = 0; i < Model.Lines.Count; i++)
+                    {
+                        var line = Model.Lines[i];
+                        <tr class="line-row">
+                            <td class="line-no align-middle">@(i + 1)</td>
+                            <td>
+                                <input type="hidden" class="line-id" name="Lines[@i].Id" value="@line.Id">
+                                <input type="hidden" class="line-product-id" name="Lines[@i].ProductId" value="@line.ProductId">
+                                <input type="hidden" class="line-service-id" name="Lines[@i].ServiceId" value="@line.ServiceId">
+                                <input type="hidden" class="line-item-name" name="Lines[@i].ItemName" value="@line.ItemName">
+                                <select class="form-select item-select"></select>
+                            </td>
+                            <td><input class="form-control text-end line-qty" name="Lines[@i].Quantity" value="@line.Quantity.ToString("0.##")" inputmode="decimal"></td>
+                            <td><input class="form-control line-unit" name="Lines[@i].Unit" value="@line.Unit"></td>
+                            <td><input class="form-control text-end line-price" name="Lines[@i].UnitPrice" value="@line.UnitPrice.ToString("0.00")" inputmode="decimal"></td>
+                            <td>
+                                <select class="form-select line-vat-rate" name="Lines[@i].VatRate">
+                                    <option value="0" selected="@(line.VatRate == 0)">%0</option>
+                                    <option value="1" selected="@(line.VatRate == 1)">%1</option>
+                                    <option value="10" selected="@(line.VatRate == 10)">%10</option>
+                                    <option value="20" selected="@(line.VatRate == 20)">%20</option>
+                                </select>
+                            </td>
+                            <td class="text-end align-middle line-vat-amount">0,00</td>
+                            <td><input class="form-control text-end line-discount" name="Lines[@i].DiscountValue" value="@line.DiscountValue.ToString("0.##")" inputmode="decimal"></td>
+                            <td>
+                                <select class="form-select line-discount-type" name="Lines[@i].DiscountType">
+                                    <option value="Rate" selected="@(line.DiscountType == DiscountType.Rate)">Oran</option>
+                                    <option value="Amount" selected="@(line.DiscountType == DiscountType.Amount)">Tutar</option>
+                                </select>
+                            </td>
+                            <td class="text-end align-middle line-total">0,00</td>
+                            <td class="align-middle">
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-line"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button type="button" class="btn add-line-btn" id="addLineBtn"><i class="fas fa-plus me-1"></i> Ekle</button>
+        </div>
+
+        <div class="row g-4 mt-2">
+            <!-- Kategori & açıklama -->
+            <div class="col-lg-6">
+                <label class="form-label">Kategori</label>
+                <input asp-for="Category" class="form-control" placeholder="Anahtar kelime ekleyin...">
+                <label class="form-label mt-3">Açıklama</label>
+                <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+            </div>
+
+            <!-- Toplamlar -->
+            <div class="col-lg-6">
+                <div class="totals-panel">
+                    <div class="row-line header"><span></span><span>Tutar (TL)</span></div>
+                    <div class="row-line"><span>Ara Toplam</span><span id="totalSub">0,00 ₺</span></div>
+                    <div class="row-line">
+                        <span>İndirim</span>
+                        <span class="d-flex gap-2 align-items-center">
+                            <input class="form-control form-control-sm text-end" style="width:90px"
+                                   name="GeneralDiscountValue" id="generalDiscount"
+                                   value="@Model.GeneralDiscountValue.ToString("0.##")" inputmode="decimal">
+                            <select class="form-select form-select-sm" style="width:80px" name="GeneralDiscountType" id="generalDiscountType">
+                                <option value="Rate" selected="@(Model.GeneralDiscountType == DiscountType.Rate)">Oran</option>
+                                <option value="Amount" selected="@(Model.GeneralDiscountType == DiscountType.Amount)">Tutar</option>
+                            </select>
+                        </span>
+                    </div>
+                    <div class="row-line"><span>Toplam İndirim</span><span id="totalDiscount">0,00 ₺</span></div>
+                    <div class="row-line"><span>Stopaj Toplamı</span><span>0,00 ₺</span></div>
+                    <div class="row-line"><span>Toplam</span><span id="totalNet">0,00 ₺</span></div>
+                    <div class="row-line"><span>Toplam KDV Tutarı</span><span id="totalVat">0,00 ₺</span></div>
+                    <div class="row-line grand"><span>Genel Toplam</span><span id="totalGrand">0,00 ₺</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Yeni satır şablonu (name'ler JS ile indekslenir) -->
+<template id="lineTemplate">
+    <tr class="line-row">
+        <td class="line-no align-middle"></td>
+        <td>
+            <input type="hidden" class="line-id" data-name="Id" value="0">
+            <input type="hidden" class="line-product-id" data-name="ProductId" value="">
+            <input type="hidden" class="line-service-id" data-name="ServiceId" value="">
+            <input type="hidden" class="line-item-name" data-name="ItemName" value="">
+            <select class="form-select item-select"></select>
+        </td>
+        <td><input class="form-control text-end line-qty" data-name="Quantity" value="1" inputmode="decimal"></td>
+        <td><input class="form-control line-unit" data-name="Unit" value="Adet"></td>
+        <td><input class="form-control text-end line-price" data-name="UnitPrice" value="0,00" inputmode="decimal"></td>
+        <td>
+            <select class="form-select line-vat-rate" data-name="VatRate">
+                <option value="0">%0</option>
+                <option value="1">%1</option>
+                <option value="10">%10</option>
+                <option value="20" selected>%20</option>
+            </select>
+        </td>
+        <td class="text-end align-middle line-vat-amount">0,00</td>
+        <td><input class="form-control text-end line-discount" data-name="DiscountValue" value="0" inputmode="decimal"></td>
+        <td>
+            <select class="form-select line-discount-type" data-name="DiscountType">
+                <option value="Rate" selected>Oran</option>
+                <option value="Amount">Tutar</option>
+            </select>
+        </td>
+        <td class="text-end align-middle line-total">0,00</td>
+        <td class="align-middle">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-line"><i class="fas fa-trash"></i></button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <script>
+        window.invoiceFormConfig = {
+            vatIncluded: @(vatIncluded ? "true" : "false"),
+            items: @Html.Raw(itemsJson),
+            firms: @Html.Raw(firmsJson),
+            selectedFirmId: @Model.FirmId
+        };
+    </script>
+    <script src="~/js/invoice-form.js" asp-append-version="true"></script>
+}

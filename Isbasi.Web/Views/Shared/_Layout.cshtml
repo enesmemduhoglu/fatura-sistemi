@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " | " : "")Logo İşbaşı</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true">
+</head>
+<body>
+    <!-- Üst bar -->
+    <header class="topbar">
+        <div class="topbar-brand">
+            <a href="/" class="brand-link">logo <span class="brand-name">İŞBAŞI</span><i class="fas fa-anchor ms-1"></i></a>
+            <button class="btn topbar-toggle d-lg-none" type="button" onclick="document.body.classList.toggle('sidebar-open')">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <div class="dropdown">
+            <button class="btn quick-action dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-plus-square me-1"></i> Hızlı İşlem
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="/invoice/sales/edit?type=Gross"><i class="fas fa-file-invoice me-2"></i>Toptan Satış Faturası</a></li>
+                <li><a class="dropdown-item" href="/invoice/sales/edit?type=Net"><i class="fas fa-file-invoice me-2"></i>Perakende Satış Faturası</a></li>
+                <li><a class="dropdown-item" href="/invoice/purchase/edit"><i class="fas fa-file-invoice me-2"></i>Alış Faturası</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/definitions/firm/edit"><i class="fas fa-user-friends me-2"></i>Yeni Müşteri/Tedarikçi</a></li>
+                <li><a class="dropdown-item" href="/definitions/product/edit"><i class="fas fa-barcode me-2"></i>Yeni Ürün</a></li>
+            </ul>
+        </div>
+        <div class="topbar-right ms-auto">
+            <span class="lang">TR</span>
+            <div class="user-info text-end">
+                <div class="user-name">enes abc</div>
+                <div class="user-company">ASDASD</div>
+            </div>
+            <div class="user-avatar"><i class="fas fa-user"></i></div>
+        </div>
+    </header>
+
+    <!-- Sol menü -->
+    <aside class="sidebar">
+        <ul class="menu">
+            @{
+                string currentPath = Context.Request.Path.ToString().ToLowerInvariant();
+                string Active(string prefix) => currentPath == prefix || (prefix != "/" && currentPath.StartsWith(prefix)) ? "active" : "";
+            }
+            <li class="menu-item @Active("/")">
+                <a href="/"><i class="fas fa-chart-line"></i><span>Genel Bakış</span></a>
+            </li>
+            <li class="menu-separator"></li>
+            <li class="menu-item has-sub @Active("/invoice/sales")">
+                <a href="#" class="menu-toggle"><i class="fas fa-file-invoice"></i><span>Satışlar</span><i class="fas fa-angle-right arrow"></i></a>
+                <ul class="submenu">
+                    <li><a href="/invoice/sales"><i class="fas fa-file-invoice"></i><span>Satış Faturaları</span></a></li>
+                    <li><a href="/comingsoon?title=Siparişler"><i class="fas fa-shopping-basket"></i><span>Siparişler</span></a></li>
+                    <li><a href="/comingsoon?title=Verilen Serbest Meslek Makbuzu"><i class="fas fa-file-invoice"></i><span>Verilen Serbest Meslek Makbuzu</span></a></li>
+                </ul>
+            </li>
+            <li class="menu-item has-sub @Active("/invoice/purchase")">
+                <a href="#" class="menu-toggle"><i class="fas fa-file-invoice"></i><span>Alışlar</span><i class="fas fa-angle-right arrow"></i></a>
+                <ul class="submenu">
+                    <li><a href="/invoice/purchase"><i class="fas fa-file-invoice"></i><span>Alış Faturaları</span></a></li>
+                    <li><a href="/comingsoon?title=Alış Sipariş"><i class="fas fa-shopping-basket"></i><span>Alış Sipariş</span></a></li>
+                    <li><a href="/comingsoon?title=Alınan Serbest Meslek Makbuzu"><i class="fas fa-file-invoice"></i><span>Alınan Serbest Meslek Makbuzu</span></a></li>
+                </ul>
+            </li>
+            <li class="menu-item">
+                <a href="/comingsoon?title=Giderler"><i class="fas fa-file-invoice"></i><span>Giderler</span></a>
+            </li>
+            <li class="menu-item @Active("/definitions/firm")">
+                <a href="/definitions/firm"><i class="fas fa-user-friends"></i><span>Müşteri &amp; Tedarikçi</span></a>
+            </li>
+            <li class="menu-item has-sub @Active("/definitions/product")@Active("/definitions/service")">
+                <a href="#" class="menu-toggle"><i class="fas fa-barcode"></i><span>Stok &amp; Hizmet</span><i class="fas fa-angle-right arrow"></i></a>
+                <ul class="submenu">
+                    <li><a href="/definitions/service"><i class="fas fa-suitcase"></i><span>Hizmetler</span></a></li>
+                    <li><a href="/definitions/product"><i class="fas fa-barcode"></i><span>Ürünler</span></a></li>
+                    <li><a href="/comingsoon?title=Stok Hareketleri"><i class="fas fa-history"></i><span>Stok Hareketleri</span></a></li>
+                </ul>
+            </li>
+            <li class="menu-item has-sub">
+                <a href="#" class="menu-toggle"><i class="fas fa-money-bill"></i><span>Para</span><i class="fas fa-angle-right arrow"></i></a>
+                <ul class="submenu">
+                    <li><a href="/comingsoon?title=Nakit Durumu"><i class="fas fa-money-bill-wave"></i><span>Nakit Durumu</span></a></li>
+                    <li><a href="/comingsoon?title=Kasalar"><i class="fas fa-cash-register"></i><span>Kasalar</span></a></li>
+                    <li><a href="/comingsoon?title=Banka Hesapları"><i class="fas fa-university"></i><span>Banka Hesapları</span></a></li>
+                    <li><a href="/comingsoon?title=Banka Mutabakatı"><i class="fas fa-university"></i><span>Banka Mutabakatı</span></a></li>
+                    <li><a href="/comingsoon?title=Çekler"><i class="fas fa-money-check"></i><span>Çekler</span></a></li>
+                </ul>
+            </li>
+            <li class="menu-item has-sub">
+                <a href="#" class="menu-toggle"><i class="fas fa-chart-area"></i><span>Raporlar</span><i class="fas fa-angle-right arrow"></i></a>
+                <ul class="submenu">
+                    <li><a href="/comingsoon?title=Satış Özeti"><i class="fas fa-chart-area"></i><span>Satış Özeti</span></a></li>
+                    <li><a href="/comingsoon?title=Masraf Özeti"><i class="fas fa-chart-area"></i><span>Masraf Özeti</span></a></li>
+                    <li><a href="/comingsoon?title=Alış Özeti"><i class="fas fa-chart-area"></i><span>Alış Özeti</span></a></li>
+                    <li><a href="/comingsoon?title=KDV Raporu"><i class="fas fa-chart-area"></i><span>KDV Raporu</span></a></li>
+                    <li><a href="/comingsoon?title=Alış-Satış Toplamları"><i class="fas fa-chart-area"></i><span>Alış-Satış Toplamları</span></a></li>
+                    <li><a href="/comingsoon?title=Sipariş Durum Özeti Listesi"><i class="fas fa-chart-area"></i><span>Sipariş Durum Özeti Listesi</span></a></li>
+                </ul>
+            </li>
+            <li class="menu-item has-sub">
+                <a href="#" class="menu-toggle"><i class="fas fa-cog"></i><span>Ayarlar</span><i class="fas fa-angle-right arrow"></i></a>
+                <ul class="submenu">
+                    <li><a href="/comingsoon?title=Firma Bilgilerim"><i class="fas fa-user-cog"></i><span>Firma Bilgilerim</span></a></li>
+                    <li><a href="/comingsoon?title=Kağıt Fatura Şablonları"><i class="fas fa-th-large"></i><span>Kağıt Fatura Şablonları</span></a></li>
+                    <li><a href="/comingsoon?title=Verileri İçe Aktar"><i class="fas fa-th-large"></i><span>Verileri İçe Aktar</span></a></li>
+                    <li><a href="/comingsoon?title=Verileri Dışa Aktar"><i class="fas fa-th-large"></i><span>Verileri Dışa Aktar</span></a></li>
+                    <li><a href="/comingsoon?title=İşbaşı İzin Verilen Uygulamalar"><i class="fas fa-th-large"></i><span>İşbaşı İzin Verilen Uygulamalar</span></a></li>
+                </ul>
+            </li>
+            <li class="menu-item">
+                <a href="/comingsoon?title=Entegrasyonlar"><i class="fas fa-cogs"></i><span>Entegrasyonlar</span></a>
+            </li>
+            <li class="menu-item">
+                <a href="/comingsoon?title=İşbaşı POS"><i class="fas fa-cogs"></i><span>İşbaşı POS</span><span class="badge-new">Yeni</span></a>
+            </li>
+            <li class="menu-separator"></li>
+            <li class="menu-item">
+                <a href="/comingsoon?title=Güvenli Çıkış"><i class="fas fa-sign-out-alt"></i><span>Güvenli Çıkış</span></a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- İçerik -->
+    <main class="content">
+        <partial name="_Alerts" />
+        @RenderBody()
+        <footer class="app-footer">
+            <span>© @DateTime.Today.Year Logo Yazılım Sanayi ve Ticaret A.Ş. Tüm hakları saklıdır.</span>
+            <span class="footer-links">
+                <a href="#">Hakkımızda</a>
+                <a href="#">Gizlilik</a>
+                <a href="#">Satınal</a>
+            </span>
+        </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        // Alt menü aç/kapa; aktif alt menüler açık başlar
+        document.querySelectorAll('.menu-toggle').forEach(function (el) {
+            el.addEventListener('click', function (e) {
+                e.preventDefault();
+                el.parentElement.classList.toggle('open');
+            });
+        });
+        document.querySelectorAll('.menu-item.active.has-sub').forEach(function (el) {
+            el.classList.add('open');
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

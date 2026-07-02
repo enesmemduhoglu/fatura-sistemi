@@ -1,0 +1,56 @@
+@model Service
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Yeni Hizmet" : "Hizmet Düzenle";
+}
+
+<div class="page-header">
+    <h1 class="page-title"><span class="breadcrumb-part">Hizmetler &gt;</span> @ViewData["Title"]</h1>
+</div>
+
+<div class="portlet">
+    <form method="post" action="/definitions/service/edit">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label" asp-for="Code"></label>
+                <input class="form-control" asp-for="Code" />
+            </div>
+            <div class="col-md-8">
+                <label class="form-label" asp-for="Name"></label>
+                <input class="form-control" asp-for="Name" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" asp-for="Unit"></label>
+                <select class="form-select" asp-for="Unit">
+                    <option>Adet</option>
+                    <option>Saat</option>
+                    <option>Gün</option>
+                    <option>Ay</option>
+                    <option>Sefer</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" asp-for="Price"></label>
+                <input class="form-control" asp-for="Price" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" asp-for="VatRate"></label>
+                <select class="form-select" asp-for="VatRate">
+                    <option value="0">%0</option>
+                    <option value="1">%1</option>
+                    <option value="10">%10</option>
+                    <option value="20">%20</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-save"><i class="fas fa-save me-1"></i> Kaydet</button>
+            <a href="/definitions/service" class="btn btn-cancel"><i class="fas fa-times me-1"></i> Vazgeç</a>
+        </div>
+    </form>
+</div>

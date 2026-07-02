@@ -1,0 +1,86 @@
+@model Firm
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Yeni Müşteri/Tedarikçi" : "Firma Düzenle";
+}
+
+<div class="page-header">
+    <h1 class="page-title"><span class="breadcrumb-part">Müşteri &amp; Tedarikçi &gt;</span> @ViewData["Title"]</h1>
+</div>
+
+<div class="portlet">
+    <form method="post" action="/definitions/firm/edit">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Name"></label>
+                <input class="form-control" asp-for="Name" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label d-block">Firma Tipi</label>
+                <div class="form-check form-check-inline mt-2">
+                    <input class="form-check-input" type="radio" asp-for="Kind" value="Corporate" id="kindCorp">
+                    <label class="form-check-label" for="kindCorp">Kurumsal</label>
+                </div>
+                <div class="form-check form-check-inline mt-2">
+                    <input class="form-check-input" type="radio" asp-for="Kind" value="Individual" id="kindInd">
+                    <label class="form-check-label" for="kindInd">Bireysel</label>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label" asp-for="Address"></label>
+                <textarea class="form-control" asp-for="Address" rows="2"></textarea>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" asp-for="Country"></label>
+                <input class="form-control" asp-for="Country" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" asp-for="City"></label>
+                <input class="form-control" asp-for="City" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" asp-for="District"></label>
+                <input class="form-control" asp-for="District" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="TaxOffice"></label>
+                <input class="form-control" asp-for="TaxOffice" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="TaxNumber"></label>
+                <input class="form-control" asp-for="TaxNumber" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Email"></label>
+                <input class="form-control" asp-for="Email" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Phone"></label>
+                <input class="form-control" asp-for="Phone" />
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label d-block">Rol</label>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" asp-for="IsCustomer" id="isCustomer">
+                    <label class="form-check-label" for="isCustomer">Müşteri</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" asp-for="IsSupplier" id="isSupplier">
+                    <label class="form-check-label" for="isSupplier">Tedarikçi</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-save"><i class="fas fa-save me-1"></i> Kaydet</button>
+            <a href="/definitions/firm" class="btn btn-cancel"><i class="fas fa-times me-1"></i> Vazgeç</a>
+        </div>
+    </form>
+</div>

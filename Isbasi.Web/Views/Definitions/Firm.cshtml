@@ -1,0 +1,88 @@
+@model List<Firm>
+@{
+    ViewData["Title"] = "Müşteri & Tedarikçi";
+    var balances = (Dictionary<int, decimal>)ViewBag.Balances;
+}
+
+<div class="page-header">
+    <h1 class="page-title">Müşteri &amp; Tedarikçi</h1>
+    <a href="/definitions/firm/edit" class="btn btn-isbasi"><i class="fas fa-plus me-1"></i> Yeni Müşteri/Tedarikçi</a>
+</div>
+
+<div class="portlet">
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <select name="role" class="form-select" onchange="this.form.submit()">
+                @{
+                    string role = ViewBag.Role as string ?? "";
+                }
+                <option value="" selected="@(role == "")">Hepsi</option>
+                <option value="customer" selected="@(role == "customer")">Müşteriler</option>
+                <option value="supplier" selected="@(role == "supplier")">Tedarikçiler</option>
+            </select>
+        </div>
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                <input type="text" name="q" value="@ViewBag.Query" class="form-control" placeholder="Ünvan ya da Vergi No ile Ara...">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-secondary w-100">Ara</button>
+        </div>
+    </form>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="fas fa-user-friends"></i>
+            <div class="title">Kayıtlı firma bulunamadı</div>
+            <div>"Yeni Müşteri/Tedarikçi" butonu ile ilk kaydınızı oluşturun.</div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Ünvan / Ad Soyad</th>
+                        <th>Tip</th>
+                        <th>Rol</th>
+                        <th>İl / İlçe</th>
+                        <th>Vergi No</th>
+                        <th>Telefon</th>
+                        <th class="text-end">Bakiye</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var firm in Model)
+                    {
+                        var balance = balances.TryGetValue(firm.Id, out var b) ? b : 0m;
+                        <tr>
+                            <td class="fw-medium">@firm.Name</td>
+                            <td>@(firm.Kind == FirmKind.Corporate ? "Kurumsal" : "Bireysel")</td>
+                            <td>
+                                @if (firm.IsCustomer) { <span class="status-badge status-paid me-1">Müşteri</span> }
+                                @if (firm.IsSupplier) { <span class="status-badge status-open">Tedarikçi</span> }
+                            </td>
+                            <td>@firm.City @(string.IsNullOrEmpty(firm.District) ? "" : "/ " + firm.District)</td>
+                            <td>@firm.TaxNumber</td>
+                            <td>@firm.Phone</td>
+                            <td class="text-end fw-medium @(balance >= 0 ? "text-success" : "text-danger")">@balance.ToString("N2") ₺</td>
+                            <td class="text-end">
+                                <a href="/definitions/firm/edit?id=@firm.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
+                                <form method="post" action="/definitions/firm/delete/@firm.Id" class="d-inline"
+                                      onsubmit="return confirm('@firm.Name silinsin mi?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

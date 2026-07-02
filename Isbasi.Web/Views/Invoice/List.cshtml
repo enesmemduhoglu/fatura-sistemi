@@ -1,0 +1,132 @@
+@model InvoiceListViewModel
+@{
+    ViewData["Title"] = Model.IsSales ? "Satış Faturaları" : "Alış Faturaları";
+    string baseUrl = Model.IsSales ? "/invoice/sales" : "/invoice/purchase";
+}
+
+<div class="page-header">
+    <h1 class="page-title">@ViewData["Title"]</h1>
+    <div class="d-flex align-items-center gap-3">
+        <span class="trial-note">Deneme sürenizin bitmesine 14 gün kalmıştır. <span class="trial-icon"><i class="fas fa-gift"></i></span></span>
+    </div>
+</div>
+
+<div class="portlet">
+    <form method="get" action="@baseUrl" class="row g-2 align-items-center mb-3">
+        <div class="col-md-2">
+            <label class="form-label mb-0 small text-muted">Kayıt Durumu</label>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select" onchange="this.form.submit()">
+                <option value="" selected="@(string.IsNullOrEmpty(Model.Status))">Hepsi</option>
+                <option value="Open" selected="@(Model.Status == "Open")">Açık</option>
+                <option value="Paid" selected="@(Model.Status == "Paid")">Ödendi</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                <input type="text" name="q" value="@Model.Query" class="form-control" placeholder="Ünvan ya da Fatura No'su ile Ara...">
+            </div>
+        </div>
+        <div class="col-md-1">
+            <a class="text-primary small text-decoration-none" data-bs-toggle="collapse" href="#detailedSearch" role="button">Detaylı Arama <i class="fas fa-plus fa-xs"></i></a>
+        </div>
+        <div class="col-md-3 text-end">
+            @if (Model.IsSales)
+            {
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-isbasi dropdown-toggle" data-bs-toggle="dropdown">Yeni Satış</button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/invoice/sales/edit?type=Gross">Toptan Satış Faturası <small class="text-muted">(KDV Hariç)</small></a></li>
+                        <li><a class="dropdown-item" href="/invoice/sales/edit?type=Net">Perakende Satış Faturası <small class="text-muted">(KDV Dahil)</small></a></li>
+                    </ul>
+                </div>
+            }
+            else
+            {
+                <a href="/invoice/purchase/edit" class="btn btn-isbasi">Yeni Alış Faturası</a>
+            }
+        </div>
+        <div class="collapse mt-2" id="detailedSearch">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label small">Başlangıç Tarihi</label>
+                    <input type="date" name="start" value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Bitiş Tarihi</label>
+                    <input type="date" name="end" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" class="form-control">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-secondary w-100">Filtrele</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @if (Model.Invoices.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="fas fa-file-invoice"></i>
+            <div class="title">Henüz fatura bulunmuyor</div>
+            <div>@(Model.IsSales ? "\"Yeni Satış\" butonu ile ilk faturanızı oluşturun." : "\"Yeni Alış Faturası\" butonu ile ilk faturanızı oluşturun.")</div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Fatura No</th>
+                        <th>@(Model.IsSales ? "Müşteri" : "Tedarikçi")</th>
+                        <th>Fatura Tipi</th>
+                        <th>Fatura Tarihi</th>
+                        <th>Vade Tarihi</th>
+                        <th class="text-end">Genel Toplam</th>
+                        <th>Durum</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var invoice in Model.Invoices)
+                    {
+                        string editUrl = Model.IsSales
+                            ? $"/invoice/sales/edit?id={invoice.Id}"
+                            : $"/invoice/purchase/edit?id={invoice.Id}";
+                        <tr>
+                            <td class="fw-medium">@invoice.InvoiceNumber</td>
+                            <td>@invoice.Firm?.Name</td>
+                            <td class="small">
+                                @(invoice.Type switch
+                                {
+                                    InvoiceType.SalesWholesale => "Toptan (KDV Hariç)",
+                                    InvoiceType.SalesRetail => "Perakende (KDV Dahil)",
+                                    _ => "Alış"
+                                })
+                            </td>
+                            <td>@invoice.InvoiceDate.ToString("dd.MM.yyyy")</td>
+                            <td>@(invoice.DueDate?.ToString("dd.MM.yyyy") ?? "-")</td>
+                            <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
+                            <td>
+                                <span class="status-badge @(invoice.Status == InvoiceStatus.Paid ? "status-paid" : "status-open")">
+                                    @(invoice.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="@editUrl" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
+                                <form method="post" action="/invoice/delete/@invoice.Id" class="d-inline"
+                                      onsubmit="return confirm('@invoice.InvoiceNumber numaralı fatura silinsin mi?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="text-muted small">Toplam @Model.Invoices.Count fatura — Genel toplam: <strong>@Model.Invoices.Sum(i => i.GrandTotal).ToString("N2") ₺</strong></div>
+    }
+</div>

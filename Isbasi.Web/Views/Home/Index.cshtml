@@ -1,0 +1,320 @@
+@model DashboardViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Genel Bakış";
+    string[] months = { "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN", "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK" };
+    decimal totalIncome = Model.MonthlyIncome.Sum();
+    decimal totalPayment = Model.MonthlyPayment.Sum();
+    decimal netAsset = Model.Receivables - Model.Payables;
+}
+
+<div class="page-header">
+    <h1 class="page-title">Genel Bakış</h1>
+    <span class="trial-note">Deneme sürenizin bitmesine 14 gün kalmıştır. <span class="trial-icon"><i class="fas fa-gift"></i></span></span>
+</div>
+
+<!-- Özet Nakit Akışı -->
+<div class="portlet">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div class="portlet-title mb-0">
+            <i class="fas fa-chart-line text-success me-2"></i>@Model.Year Özet Nakit Akışı
+            <div class="text-muted fw-normal" style="font-size:11px">Son Güncelleme: @DateTime.Now.ToString("dd.MM.yyyy HH:mm")</div>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" onclick="location.reload()"><i class="fas fa-sync-alt me-1"></i> Yenile</button>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="border rounded p-3 d-flex align-items-center gap-3">
+                <span class="text-danger fs-4"><i class="fas fa-redo-alt"></i></span>
+                <div>
+                    <div class="small text-muted">Önceki Dönemden Devir Edilen Bakiyeniz</div>
+                    <div class="fw-bold text-danger">0,00 ₺</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="border rounded p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" disabled>
+                    <label class="form-check-label small">İlgili Ay Nakit Akış Tutarı <i class="far fa-question-circle text-muted"></i></label>
+                </div>
+                <span class="period-badge">Raporlama Periyodu: @Model.Year</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered cashflow-table mb-2">
+            <thead>
+                <tr>
+                    <th>KATEGORİ</th>
+                    @foreach (var m in months) { <th>@m</th> }
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="income-row">
+                    <td><i class="fas fa-arrow-up me-1"></i> Gelirlerim ve Varlıklarım</td>
+                    @foreach (var v in Model.MonthlyIncome) { <td>@(v == 0 ? "-" : v.ToString("N2"))</td> }
+                </tr>
+                <tr class="payment-row">
+                    <td><i class="fas fa-arrow-down me-1"></i> Ödemelerim</td>
+                    @foreach (var v in Model.MonthlyPayment) { <td>@(v == 0 ? "-" : v.ToString("N2"))</td> }
+                </tr>
+                <tr class="total-row">
+                    <td>Toplam Nakit Akış</td>
+                    @for (int i = 0; i < 12; i++)
+                    {
+                        <td><span class="cell-badge">@((Model.MonthlyIncome[i] - Model.MonthlyPayment[i]).ToString("N2"))</span></td>
+                    }
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="d-flex gap-4 small text-muted justify-content-center">
+        <span><i class="fas fa-circle me-1" style="color:#34bfa3;font-size:9px"></i>GELİRLERİM VE VARLIKLARIM</span>
+        <span><i class="fas fa-circle me-1" style="color:#e8112d;font-size:9px"></i>ÖDEMELERİM</span>
+        <span><i class="fas fa-circle me-1" style="color:#a5a7b8;font-size:9px"></i>BAKİYE</span>
+    </div>
+</div>
+
+<!-- Mini Bilanço -->
+<div class="portlet">
+    <div class="portlet-title">@Model.Year Özet Mini Bilanço</div>
+    <div class="table-responsive">
+        <table class="balance-table">
+            <thead>
+                <tr>
+                    <th colspan="2">Varlıklar</th>
+                    <th colspan="2">Kaynaklar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Tahsil Edilecek Faturalar</td>
+                    <td class="amount">@Model.Receivables.ToString("N2") ₺</td>
+                    <td>Ödenecek Faturalar</td>
+                    <td class="amount">@Model.Payables.ToString("N2") ₺</td>
+                </tr>
+                <tr>
+                    <td>Tahsil Edilecek Çekler</td>
+                    <td class="amount">0,00 ₺</td>
+                    <td>Ödenecek Çekler</td>
+                    <td class="amount">0,00 ₺</td>
+                </tr>
+                <tr>
+                    <td>Devir Edilen Bakiye</td>
+                    <td class="amount">0,00 ₺</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr class="total">
+                    <td>Toplam Varlık</td>
+                    <td class="amount">@Model.Receivables.ToString("N2") ₺</td>
+                    <td>Toplam Yükümlülük</td>
+                    <td class="amount">@Model.Payables.ToString("N2") ₺</td>
+                </tr>
+                <tr class="result">
+                    <td></td>
+                    <td></td>
+                    <td>Negatif/Pozitif Varlık</td>
+                    <td class="amount">@netAsset.ToString("N2") ₺</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Borçlarım ve Alacaklarım -->
+    <div class="col-lg-5">
+        <div class="portlet">
+            <div class="portlet-title">Borçlarım ve Alacaklarım</div>
+            <div style="height:260px"><canvas id="debtChart"></canvas></div>
+            <div class="d-flex justify-content-center gap-4 small mt-3">
+                <span><i class="fas fa-square me-1" style="color:#e8112d"></i>Borçlarım @Model.Payables.ToString("N2") TL</span>
+                <span><i class="fas fa-square me-1" style="color:#34bfa3"></i>Alacaklarım @Model.Receivables.ToString("N2") TL</span>
+            </div>
+            <div class="text-center mt-2 fw-semibold">
+                <span class="text-danger">Bakiye :</span> @netAsset.ToString("N2") TL
+            </div>
+        </div>
+    </div>
+
+    <!-- Satışlarım ve Tahsilatlarım -->
+    <div class="col-lg-7">
+        <div class="portlet">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div class="portlet-title mb-0">Satışlarım ve Tahsilatlarım</div>
+                <div class="range-buttons btn-group">
+                    <button class="btn btn-sm btn-outline-secondary" data-range="week">Son 1 Hafta</button>
+                    <button class="btn btn-sm btn-outline-secondary active" data-range="month">Son 1 Ay</button>
+                    <button class="btn btn-sm btn-outline-secondary" data-range="year">Son 1 Yıl</button>
+                </div>
+            </div>
+            <div style="height:260px"><canvas id="salesChart"></canvas></div>
+            <div class="row small mt-3">
+                <div class="col-sm-6">
+                    <div class="d-flex justify-content-between py-1">
+                        <span><i class="fas fa-circle me-1" style="color:#36a3f7;font-size:8px"></i>Toplam Satışlarım (Son 1 Ay)</span>
+                        <span class="text-primary fw-medium">@Model.SalesLastMonth.ToString("N2") ₺</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span><i class="fas fa-circle me-1" style="color:#36a3f7;font-size:8px"></i>Toplam Satışlarım (Bu Ay)</span>
+                        <span class="text-primary fw-medium">@Model.SalesThisMonth.ToString("N2") ₺</span>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="d-flex justify-content-between py-1">
+                        <span><i class="fas fa-circle me-1" style="color:#34bfa3;font-size:8px"></i>Toplam Tahsilatlarım (Son 1 Ay)</span>
+                        <span class="text-success fw-medium">0,00 ₺</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span><i class="fas fa-circle me-1" style="color:#34bfa3;font-size:8px"></i>Toplam Tahsilatlarım (Bu Ay)</span>
+                        <span class="text-success fw-medium">0,00 ₺</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toplam Nakit -->
+<div class="portlet">
+    <div class="total-cash-bar mb-3"><i class="fas fa-camera"></i> TOPLAM NAKİT <span>0,00 TL</span></div>
+    <div class="table-responsive">
+        <table class="table mb-0" style="max-width:560px">
+            <thead>
+                <tr><th>DÖVİZ CİNSİ</th><th class="text-end">BAKİYE</th><th class="text-end">BAKİYE TL</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>TL</td><td class="text-end">0,00 TL</td><td class="text-end fw-medium">0,00 TL</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Kasalar ve Bankalar -->
+<div class="portlet">
+    <div class="text-center fw-semibold mb-3" style="background:#d7ecfb;padding:10px;border-radius:4px">KASALAR ve BANKALAR</div>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="mini-stat-header"><span><i class="fas fa-cash-register me-2"></i>KASALAR</span><span>0,00TL</span></div>
+            <table class="table table-sm mt-2 mb-0">
+                <thead><tr><th>KASA ADI</th><th class="text-end">BAKİYE</th><th class="text-end">BAKİYE TL</th></tr></thead>
+                <tbody><tr><td><i class="fas fa-cash-register me-1 text-muted"></i>Merkez Kasa</td><td class="text-end">0,00 TL</td><td class="text-end">0,00 TL</td></tr></tbody>
+            </table>
+        </div>
+        <div class="col-md-4">
+            <div class="mini-stat-header"><span><i class="fas fa-university me-2"></i>BANKALAR</span><span>0,00TL</span></div>
+            <table class="table table-sm mt-2 mb-0">
+                <thead><tr><th>HESAP ADI</th><th class="text-end">BAKİYE</th><th class="text-end">BAKİYE TL</th></tr></thead>
+                <tbody><tr><td colspan="3" class="text-muted text-center py-3">Banka hesabı bulunmuyor</td></tr></tbody>
+            </table>
+        </div>
+        <div class="col-md-4">
+            <div class="mini-stat-header"><span><i class="fas fa-money-check me-2"></i>ÇEK</span><span>0,00TL</span></div>
+            <table class="table table-sm mt-2 mb-0">
+                <thead><tr><th>TÜRÜ</th><th class="text-end">BAKİYE</th><th class="text-end">BAKİYE TL</th></tr></thead>
+                <tbody><tr><td colspan="3" class="text-muted text-center py-3">Çek bulunmuyor</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const debtChart = new Chart(document.getElementById('debtChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Borçlarım', 'Alacaklarım'],
+                datasets: [{
+                    data: [@Model.Payables.ToString(System.Globalization.CultureInfo.InvariantCulture), @Model.Receivables.ToString(System.Globalization.CultureInfo.InvariantCulture)],
+                    backgroundColor: ['#e8112d', '#34bfa3'],
+                    borderRadius: 4,
+                    barThickness: 60
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.parsed.y.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' TL'
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f0f1f5' }, ticks: { font: { size: 11 } } },
+                    x: { grid: { display: false }, ticks: { font: { size: 12 } } }
+                }
+            }
+        });
+
+        const salesData = {
+            week:  { labels: @Html.Raw(JsonSerializer.Serialize(Model.ChartLabelsWeek)),  values: @Html.Raw(JsonSerializer.Serialize(Model.ChartSalesWeek)) },
+            month: { labels: @Html.Raw(JsonSerializer.Serialize(Model.ChartLabelsMonth)), values: @Html.Raw(JsonSerializer.Serialize(Model.ChartSalesMonth)) },
+            year:  { labels: @Html.Raw(JsonSerializer.Serialize(Model.ChartLabelsYear)),  values: @Html.Raw(JsonSerializer.Serialize(Model.ChartSalesYear)) }
+        };
+
+        const salesChart = new Chart(document.getElementById('salesChart'), {
+            type: 'line',
+            data: {
+                labels: salesData.month.labels,
+                datasets: [
+                    {
+                        label: 'Satışlar',
+                        data: salesData.month.values,
+                        borderColor: '#36a3f7',
+                        backgroundColor: 'rgba(54,163,247,.08)',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#36a3f7',
+                        tension: .3,
+                        fill: true
+                    },
+                    {
+                        label: 'Tahsilatlar',
+                        data: salesData.month.values.map(() => 0),
+                        borderColor: '#34bfa3',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#34bfa3',
+                        tension: .3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' TL'
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f0f1f5' }, ticks: { font: { size: 11 } } },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        document.querySelectorAll('.range-buttons .btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.range-buttons .btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const range = salesData[btn.dataset.range];
+                salesChart.data.labels = range.labels;
+                salesChart.data.datasets[0].data = range.values;
+                salesChart.data.datasets[1].data = range.values.map(() => 0);
+                salesChart.update();
+            });
+        });
+    </script>
+}
