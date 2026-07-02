@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
     public DbSet<Safe> Safes => Set<Safe>();
     public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -27,6 +28,25 @@ public class AppDbContext : DbContext
             .HasOne(i => i.Firm)
             .WithMany(f => f.Invoices)
             .HasForeignKey(i => i.FirmId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Invoice>()
+            .HasMany(i => i.Payments)
+            .WithOne(p => p.Invoice)
+            .HasForeignKey(p => p.InvoiceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Kasa/banka silinirken üzerindeki hareketler korunur; silme controller'da engellenir
+        modelBuilder.Entity<Payment>()
+            .HasOne(p => p.Safe)
+            .WithMany()
+            .HasForeignKey(p => p.SafeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Payment>()
+            .HasOne(p => p.BankAccount)
+            .WithMany()
+            .HasForeignKey(p => p.BankAccountId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

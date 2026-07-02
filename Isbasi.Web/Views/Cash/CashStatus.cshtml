@@ -2,8 +2,9 @@
     ViewData["Title"] = "Nakit Durumu";
     var safes = (List<Safe>)ViewBag.Safes;
     var banks = (List<BankAccount>)ViewBag.Banks;
-    decimal safeTotal = safes.Sum(s => s.OpeningBalance);
-    decimal bankTotal = banks.Sum(b => b.OpeningBalance);
+    var balances = (Isbasi.Web.Data.CashBalances)ViewBag.Balances;
+    decimal safeTotal = safes.Sum(s => balances.SafeBalanceOf(s));
+    decimal bankTotal = banks.Sum(b => balances.BankBalanceOf(b));
 }
 
 <div class="page-header">
@@ -29,8 +30,8 @@
                         {
                             <tr>
                                 <td><a href="/definitions/safe/edit?id=@safe.Id" class="text-decoration-none"><i class="fas fa-cash-register me-1 text-muted"></i>@safe.Name</a></td>
-                                <td class="text-end">@safe.OpeningBalance.ToString("N2") @safe.Currency</td>
-                                <td class="text-end fw-medium">@safe.OpeningBalance.ToString("N2") TL</td>
+                                <td class="text-end">@balances.SafeBalanceOf(safe).ToString("N2") @safe.Currency</td>
+                                <td class="text-end fw-medium">@balances.SafeBalanceOf(safe).ToString("N2") TL</td>
                             </tr>
                         }
                     }
@@ -52,8 +53,8 @@
                         {
                             <tr>
                                 <td><a href="/definitions/bank/edit?id=@bank.Id" class="text-decoration-none"><i class="fas fa-university me-1 text-muted"></i>@bank.Name</a></td>
-                                <td class="text-end">@bank.OpeningBalance.ToString("N2") @bank.Currency</td>
-                                <td class="text-end fw-medium">@bank.OpeningBalance.ToString("N2") TL</td>
+                                <td class="text-end">@balances.BankBalanceOf(bank).ToString("N2") @bank.Currency</td>
+                                <td class="text-end fw-medium">@balances.BankBalanceOf(bank).ToString("N2") TL</td>
                             </tr>
                         }
                     }

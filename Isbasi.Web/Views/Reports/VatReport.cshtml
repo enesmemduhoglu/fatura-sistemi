@@ -1,0 +1,59 @@
+@model VatReportViewModel
+@{
+    ViewData["Title"] = "KDV Raporu";
+}
+
+<div class="page-header">
+    <h1 class="page-title">KDV Raporu</h1>
+    <form method="get" class="d-flex align-items-center gap-2">
+        <label class="form-label mb-0 small text-muted">Yıl</label>
+        <select name="year" class="form-select form-select-sm" style="width:100px" onchange="this.form.submit()">
+            @for (int y = DateTime.Today.Year; y >= DateTime.Today.Year - 4; y--)
+            {
+                <option value="@y" selected="@(y == Model.Year)">@y</option>
+            }
+        </select>
+    </form>
+</div>
+
+<div class="portlet">
+    <div class="portlet-title">@Model.Year Aylık KDV Özeti</div>
+    <div class="text-muted small mb-3">
+        Hesaplanan KDV satış faturalarından, indirilecek KDV alış ve gider faturalarından gelir.
+        Pozitif fark ödenecek KDV, negatif fark devreden KDV anlamına gelir.
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle" style="max-width:820px">
+            <thead>
+                <tr>
+                    <th>Ay</th>
+                    <th class="text-end">Hesaplanan KDV (Satış)</th>
+                    <th class="text-end">İndirilecek KDV (Alış + Gider)</th>
+                    <th class="text-end">Fark</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Months)
+                {
+                    bool isEmpty = row.CalculatedVat == 0 && row.DeductibleVat == 0;
+                    <tr class="@(isEmpty ? "text-muted" : "")">
+                        <td class="text-capitalize">@row.Month</td>
+                        <td class="text-end">@(isEmpty ? "-" : row.CalculatedVat.ToString("N2"))</td>
+                        <td class="text-end">@(isEmpty ? "-" : row.DeductibleVat.ToString("N2"))</td>
+                        <td class="text-end fw-medium @(row.Difference > 0 ? "text-danger" : row.Difference < 0 ? "text-success" : "")">
+                            @(isEmpty ? "-" : row.Difference.ToString("N2"))
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold" style="background:#f7f8fa">
+                    <td>Toplam</td>
+                    <td class="text-end">@Model.TotalCalculated.ToString("N2") ₺</td>
+                    <td class="text-end">@Model.TotalDeductible.ToString("N2") ₺</td>
+                    <td class="text-end @(Model.TotalDifference > 0 ? "text-danger" : "text-success")">@Model.TotalDifference.ToString("N2") ₺</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

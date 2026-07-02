@@ -1,6 +1,7 @@
 @model List<BankAccount>
 @{
     ViewData["Title"] = "Banka Hesapları";
+    var balances = (Isbasi.Web.Data.CashBalances)ViewBag.Balances;
 }
 
 <div class="page-header">
@@ -28,7 +29,8 @@
                         <th>Şube</th>
                         <th>IBAN</th>
                         <th>Döviz</th>
-                        <th class="text-end">Bakiye</th>
+                        <th class="text-end">Açılış Bakiyesi</th>
+                        <th class="text-end">Güncel Bakiye</th>
                         <th class="text-end">İşlemler</th>
                     </tr>
                 </thead>
@@ -41,7 +43,8 @@
                             <td>@bank.Branch</td>
                             <td class="small">@bank.Iban</td>
                             <td>@bank.Currency</td>
-                            <td class="text-end fw-medium">@bank.OpeningBalance.ToString("N2") ₺</td>
+                            <td class="text-end">@bank.OpeningBalance.ToString("N2") ₺</td>
+                            <td class="text-end fw-medium">@balances.BankBalanceOf(bank).ToString("N2") ₺</td>
                             <td class="text-end">
                                 <a href="/definitions/bank/edit?id=@bank.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
                                 <form method="post" action="/definitions/bank/delete/@bank.Id" class="d-inline"
@@ -55,6 +58,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="text-muted small">Toplam banka bakiyesi: <strong>@Model.Sum(b => b.OpeningBalance).ToString("N2") ₺</strong></div>
+        <div class="text-muted small">Toplam banka bakiyesi: <strong>@Model.Sum(b => balances.BankBalanceOf(b)).ToString("N2") ₺</strong></div>
     }
 </div>

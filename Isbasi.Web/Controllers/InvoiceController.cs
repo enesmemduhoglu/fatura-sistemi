@@ -27,7 +27,7 @@ public class InvoiceController : Controller
 
     private async Task<IActionResult> List(string mode, string? status, string? q, DateTime? start, DateTime? end)
     {
-        var query = _db.Invoices.AsNoTracking().Include(i => i.Firm).AsQueryable();
+        var query = _db.Invoices.AsNoTracking().Include(i => i.Firm).Include(i => i.Payments).AsQueryable();
         query = mode switch
         {
             "Sales" => query.Where(i => i.Type == InvoiceType.SalesWholesale || i.Type == InvoiceType.SalesRetail),

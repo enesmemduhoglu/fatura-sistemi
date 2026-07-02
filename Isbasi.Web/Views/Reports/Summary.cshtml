@@ -1,0 +1,90 @@
+@model ReportSummaryViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="page-header">
+    <h1 class="page-title">@Model.Title</h1>
+    <form method="get" class="d-flex align-items-center gap-2">
+        <label class="form-label mb-0 small text-muted">Yıl</label>
+        <select name="year" class="form-select form-select-sm" style="width:100px" onchange="this.form.submit()">
+            @for (int y = DateTime.Today.Year; y >= DateTime.Today.Year - 4; y--)
+            {
+                <option value="@y" selected="@(y == Model.Year)">@y</option>
+            }
+        </select>
+    </form>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="portlet">
+            <div class="portlet-title">@Model.Year Aylık Özet</div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Ay</th>
+                            <th class="text-end">Fatura Sayısı</th>
+                            <th class="text-end">Matrah</th>
+                            <th class="text-end">KDV</th>
+                            <th class="text-end">Genel Toplam</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.Months)
+                        {
+                            <tr class="@(row.InvoiceCount == 0 ? "text-muted" : "")">
+                                <td class="text-capitalize">@row.Month</td>
+                                <td class="text-end">@(row.InvoiceCount == 0 ? "-" : row.InvoiceCount.ToString())</td>
+                                <td class="text-end">@(row.InvoiceCount == 0 ? "-" : row.Net.ToString("N2"))</td>
+                                <td class="text-end">@(row.InvoiceCount == 0 ? "-" : row.Vat.ToString("N2"))</td>
+                                <td class="text-end fw-medium">@(row.InvoiceCount == 0 ? "-" : row.Gross.ToString("N2"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold" style="background:#f7f8fa">
+                            <td>Toplam</td>
+                            <td class="text-end">@Model.TotalCount</td>
+                            <td class="text-end">@Model.TotalNet.ToString("N2")</td>
+                            <td class="text-end">@Model.TotalVat.ToString("N2")</td>
+                            <td class="text-end">@Model.TotalGross.ToString("N2") ₺</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="portlet">
+            <div class="portlet-title">@Model.FirmColumnTitle Kırılımı</div>
+            @if (Model.Firms.Count == 0)
+            {
+                <div class="text-muted text-center py-4">Bu yıl için kayıt bulunmuyor.</div>
+            }
+            else
+            {
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>@Model.FirmColumnTitle</th>
+                            <th class="text-end">Fatura Sayısı</th>
+                            <th class="text-end">Genel Toplam</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var firm in Model.Firms)
+                        {
+                            <tr>
+                                <td class="fw-medium">@firm.FirmName</td>
+                                <td class="text-end">@firm.InvoiceCount</td>
+                                <td class="text-end fw-medium">@firm.Gross.ToString("N2") ₺</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>

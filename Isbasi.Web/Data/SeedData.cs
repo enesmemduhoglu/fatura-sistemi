@@ -107,5 +107,21 @@ public static class SeedData
 
         db.Invoices.AddRange(invoices);
         db.SaveChanges();
+
+        // Ödendi durumundaki faturalara tam tahsilat/ödeme kaydı düşülür (bankaya)
+        var bank = db.BankAccounts.First();
+        foreach (var invoice in invoices.Where(i => i.Status == InvoiceStatus.Paid))
+        {
+            db.Payments.Add(new Payment
+            {
+                InvoiceId = invoice.Id,
+                Date = invoice.InvoiceDate.AddDays(15),
+                Amount = invoice.GrandTotal,
+                AccountType = PaymentAccountType.Bank,
+                BankAccountId = bank.Id,
+                Description = "Açılış verisi"
+            });
+        }
+        db.SaveChanges();
     }
 }

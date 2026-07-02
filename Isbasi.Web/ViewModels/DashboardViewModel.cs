@@ -6,9 +6,18 @@ public class DashboardViewModel
 {
     public List<Safe> Safes { get; set; } = new();
     public List<BankAccount> Banks { get; set; } = new();
-    public decimal SafeTotal => Safes.Sum(s => s.OpeningBalance);
-    public decimal BankTotal => Banks.Sum(b => b.OpeningBalance);
+    public Data.CashBalances? CashBalances { get; set; }
+    public decimal SafeBalanceOf(Safe safe) => CashBalances?.SafeBalanceOf(safe) ?? safe.OpeningBalance;
+    public decimal BankBalanceOf(BankAccount bank) => CashBalances?.BankBalanceOf(bank) ?? bank.OpeningBalance;
+    public decimal SafeTotal => Safes.Sum(SafeBalanceOf);
+    public decimal BankTotal => Banks.Sum(BankBalanceOf);
     public decimal TotalCash => SafeTotal + BankTotal;
+
+    public decimal CollectionsLastMonth { get; set; }
+    public decimal CollectionsThisMonth { get; set; }
+    public List<decimal> ChartCollectionsWeek { get; set; } = new();
+    public List<decimal> ChartCollectionsMonth { get; set; } = new();
+    public List<decimal> ChartCollectionsYear { get; set; } = new();
 
     public int Year { get; set; }
     public decimal[] MonthlyIncome { get; set; } = new decimal[12];

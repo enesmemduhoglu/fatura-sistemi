@@ -1,6 +1,7 @@
 @model List<Safe>
 @{
     ViewData["Title"] = "Kasalar";
+    var balances = (Isbasi.Web.Data.CashBalances)ViewBag.Balances;
 }
 
 <div class="page-header">
@@ -25,7 +26,8 @@
                     <tr>
                         <th>Kasa Adı</th>
                         <th>Döviz</th>
-                        <th class="text-end">Bakiye</th>
+                        <th class="text-end">Açılış Bakiyesi</th>
+                        <th class="text-end">Güncel Bakiye</th>
                         <th class="text-end">İşlemler</th>
                     </tr>
                 </thead>
@@ -35,7 +37,8 @@
                         <tr>
                             <td class="fw-medium"><i class="fas fa-cash-register me-2 text-muted"></i>@safe.Name</td>
                             <td>@safe.Currency</td>
-                            <td class="text-end fw-medium">@safe.OpeningBalance.ToString("N2") ₺</td>
+                            <td class="text-end">@safe.OpeningBalance.ToString("N2") ₺</td>
+                            <td class="text-end fw-medium">@balances.SafeBalanceOf(safe).ToString("N2") ₺</td>
                             <td class="text-end">
                                 <a href="/definitions/safe/edit?id=@safe.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
                                 <form method="post" action="/definitions/safe/delete/@safe.Id" class="d-inline"
@@ -49,6 +52,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="text-muted small">Toplam kasa bakiyesi: <strong>@Model.Sum(s => s.OpeningBalance).ToString("N2") ₺</strong></div>
+        <div class="text-muted small">Toplam kasa bakiyesi: <strong>@Model.Sum(s => balances.SafeBalanceOf(s)).ToString("N2") ₺</strong></div>
     }
 </div>

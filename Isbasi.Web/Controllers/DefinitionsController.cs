@@ -143,7 +143,10 @@ public class DefinitionsController : Controller
 
     [HttpGet("safe")]
     public async Task<IActionResult> Safe()
-        => View(await _db.Safes.AsNoTracking().OrderBy(s => s.Name).ToListAsync());
+    {
+        ViewBag.Balances = await CashBalanceCalculator.Compute(_db);
+        return View(await _db.Safes.AsNoTracking().OrderBy(s => s.Name).ToListAsync());
+    }
 
     [HttpGet("safe/edit")]
     public async Task<IActionResult> SafeEdit(int? id)
@@ -171,9 +174,18 @@ public class DefinitionsController : Controller
     {
         var safe = await _db.Safes.FindAsync(id);
         if (safe == null) return NotFound();
-        _db.Safes.Remove(safe);
-        await _db.SaveChangesAsync();
-        TempData["Success"] = "Kasa silindi.";
+
+        bool hasPayments = await _db.Payments.AnyAsync(p => p.SafeId == id);
+        if (hasPayments)
+        {
+            TempData["Error"] = "Bu kasada tahsilat/ödeme hareketi olduğu için silinemez.";
+        }
+        else
+        {
+            _db.Safes.Remove(safe);
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Kasa silindi.";
+        }
         return RedirectToAction(nameof(Safe));
     }
 
@@ -181,7 +193,10 @@ public class DefinitionsController : Controller
 
     [HttpGet("bank")]
     public async Task<IActionResult> Bank()
-        => View(await _db.BankAccounts.AsNoTracking().OrderBy(b => b.Name).ToListAsync());
+    {
+        ViewBag.Balances = await CashBalanceCalculator.Compute(_db);
+        return View(await _db.BankAccounts.AsNoTracking().OrderBy(b => b.Name).ToListAsync());
+    }
 
     [HttpGet("bank/edit")]
     public async Task<IActionResult> BankEdit(int? id)
@@ -209,9 +224,18 @@ public class DefinitionsController : Controller
     {
         var bank = await _db.BankAccounts.FindAsync(id);
         if (bank == null) return NotFound();
-        _db.BankAccounts.Remove(bank);
-        await _db.SaveChangesAsync();
-        TempData["Success"] = "Banka hesabı silindi.";
+
+        bool hasPayments = await _db.Payments.AnyAsync(p => p.BankAccountId == id);
+        if (hasPayments)
+        {
+            TempData["Error"] = "Bu hesapta tahsilat/ödeme hareketi olduğu için silinemez.";
+        }
+        else
+        {
+            _db.BankAccounts.Remove(bank);
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Banka hesabı silindi.";
+        }
         return RedirectToAction(nameof(Bank));
     }
 

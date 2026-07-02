@@ -69,6 +69,10 @@ public class Invoice
     public decimal GrandTotal { get; set; }
 
     public List<InvoiceLine> Lines { get; set; } = new();
+    public List<Payment> Payments { get; set; } = new();
 
     public bool IsSales => Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail;
+
+    public decimal PaidTotal => Payments.Sum(p => p.Amount);
+    public decimal RemainingTotal => GrandTotal - PaidTotal;
 }

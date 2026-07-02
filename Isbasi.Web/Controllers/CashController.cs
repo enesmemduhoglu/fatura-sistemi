@@ -16,6 +16,7 @@ public class CashController : Controller
     {
         ViewBag.Safes = await _db.Safes.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
         ViewBag.Banks = await _db.BankAccounts.AsNoTracking().OrderBy(b => b.Name).ToListAsync();
+        ViewBag.Balances = await CashBalanceCalculator.Compute(_db);
         return View();
     }
 }

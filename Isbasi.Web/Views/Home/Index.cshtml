@@ -167,11 +167,11 @@
                 <div class="col-sm-6">
                     <div class="d-flex justify-content-between py-1">
                         <span><i class="fas fa-circle me-1" style="color:#34bfa3;font-size:8px"></i>Toplam Tahsilatlarım (Son 1 Ay)</span>
-                        <span class="text-success fw-medium">0,00 ₺</span>
+                        <span class="text-success fw-medium">@Model.CollectionsLastMonth.ToString("N2") ₺</span>
                     </div>
                     <div class="d-flex justify-content-between py-1">
                         <span><i class="fas fa-circle me-1" style="color:#34bfa3;font-size:8px"></i>Toplam Tahsilatlarım (Bu Ay)</span>
-                        <span class="text-success fw-medium">0,00 ₺</span>
+                        <span class="text-success fw-medium">@Model.CollectionsThisMonth.ToString("N2") ₺</span>
                     </div>
                 </div>
             </div>
@@ -211,7 +211,7 @@
                     {
                         foreach (var safe in Model.Safes)
                         {
-                            <tr><td><i class="fas fa-cash-register me-1 text-muted"></i>@safe.Name</td><td class="text-end">@safe.OpeningBalance.ToString("N2") TL</td><td class="text-end">@safe.OpeningBalance.ToString("N2") TL</td></tr>
+                            <tr><td><i class="fas fa-cash-register me-1 text-muted"></i>@safe.Name</td><td class="text-end">@Model.SafeBalanceOf(safe).ToString("N2") TL</td><td class="text-end">@Model.SafeBalanceOf(safe).ToString("N2") TL</td></tr>
                         }
                     }
                 </tbody>
@@ -230,7 +230,7 @@
                     {
                         foreach (var bank in Model.Banks)
                         {
-                            <tr><td><i class="fas fa-university me-1 text-muted"></i>@bank.Name</td><td class="text-end">@bank.OpeningBalance.ToString("N2") TL</td><td class="text-end">@bank.OpeningBalance.ToString("N2") TL</td></tr>
+                            <tr><td><i class="fas fa-university me-1 text-muted"></i>@bank.Name</td><td class="text-end">@Model.BankBalanceOf(bank).ToString("N2") TL</td><td class="text-end">@Model.BankBalanceOf(bank).ToString("N2") TL</td></tr>
                         }
                     }
                 </tbody>
@@ -278,9 +278,9 @@
         });
 
         const salesData = {
-            week:  { labels: @Html.Raw(JsonSerializer.Serialize(Model.ChartLabelsWeek)),  values: @Html.Raw(JsonSerializer.Serialize(Model.ChartSalesWeek)) },
-            month: { labels: @Html.Raw(JsonSerializer.Serialize(Model.ChartLabelsMonth)), values: @Html.Raw(JsonSerializer.Serialize(Model.ChartSalesMonth)) },
-            year:  { labels: @Html.Raw(JsonSerializer.Serialize(Model.ChartLabelsYear)),  values: @Html.Raw(JsonSerializer.Serialize(Model.ChartSalesYear)) }
+            week:  { labels: @Html.Raw(JsonSerializer.Serialize(Model.ChartLabelsWeek)),  values: @Html.Raw(JsonSerializer.Serialize(Model.ChartSalesWeek)),  collections: @Html.Raw(JsonSerializer.Serialize(Model.ChartCollectionsWeek)) },
+            month: { labels: @Html.Raw(JsonSerializer.Serialize(Model.ChartLabelsMonth)), values: @Html.Raw(JsonSerializer.Serialize(Model.ChartSalesMonth)), collections: @Html.Raw(JsonSerializer.Serialize(Model.ChartCollectionsMonth)) },
+            year:  { labels: @Html.Raw(JsonSerializer.Serialize(Model.ChartLabelsYear)),  values: @Html.Raw(JsonSerializer.Serialize(Model.ChartSalesYear)),  collections: @Html.Raw(JsonSerializer.Serialize(Model.ChartCollectionsYear)) }
         };
 
         const salesChart = new Chart(document.getElementById('salesChart'), {
@@ -301,7 +301,7 @@
                     },
                     {
                         label: 'Tahsilatlar',
-                        data: salesData.month.values.map(() => 0),
+                        data: salesData.month.collections,
                         borderColor: '#34bfa3',
                         borderWidth: 2,
                         pointRadius: 4,
@@ -336,7 +336,7 @@
                 const range = salesData[btn.dataset.range];
                 salesChart.data.labels = range.labels;
                 salesChart.data.datasets[0].data = range.values;
-                salesChart.data.datasets[1].data = range.values.map(() => 0);
+                salesChart.data.datasets[1].data = range.collections;
                 salesChart.update();
             });
         });

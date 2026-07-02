@@ -1,0 +1,167 @@
+@model Payment
+@{
+    var invoice = (Invoice)ViewBag.Invoice;
+    var safes = (List<Safe>)ViewBag.Safes;
+    var banks = (List<BankAccount>)ViewBag.Banks;
+    bool isSales = invoice.IsSales;
+    string operationName = isSales ? "Tahsilat" : "Ödeme";
+    string listUrl = invoice.Type switch
+    {
+        InvoiceType.Purchase => "/invoice/purchase",
+        InvoiceType.Expense => "/invoice/purchaseservices",
+        _ => "/invoice/sales"
+    };
+    ViewData["Title"] = $"{operationName} - {invoice.InvoiceNumber}";
+}
+
+<div class="page-header">
+    <h1 class="page-title">
+        <span class="breadcrumb-part"><a href="@listUrl" class="text-decoration-none">Faturalar</a> &gt;</span>
+        @operationName <small class="text-muted">@invoice.InvoiceNumber</small>
+    </h1>
+    <a href="@listUrl" class="btn btn-cancel btn-sm"><i class="fas fa-arrow-left me-1"></i> Listeye Dön</a>
+</div>
+
+<div class="row g-4">
+    <!-- Fatura özeti -->
+    <div class="col-lg-4">
+        <div class="portlet">
+            <div class="portlet-title">Fatura Özeti</div>
+            <table class="table table-sm">
+                <tbody>
+                    <tr><td class="text-muted">Fatura No</td><td class="fw-medium text-end">@invoice.InvoiceNumber</td></tr>
+                    <tr><td class="text-muted">Firma</td><td class="fw-medium text-end">@invoice.Firm?.Name</td></tr>
+                    <tr><td class="text-muted">Fatura Tarihi</td><td class="text-end">@invoice.InvoiceDate.ToString("dd.MM.yyyy")</td></tr>
+                    <tr><td class="text-muted">Genel Toplam</td><td class="fw-medium text-end">@invoice.GrandTotal.ToString("N2") ₺</td></tr>
+                    <tr><td class="text-muted">@(isSales ? "Tahsil Edilen" : "Ödenen")</td><td class="text-success fw-medium text-end">@invoice.PaidTotal.ToString("N2") ₺</td></tr>
+                    <tr><td class="text-muted">Kalan</td><td class="fw-bold text-end @(invoice.RemainingTotal > 0 ? "text-danger" : "text-success")">@invoice.RemainingTotal.ToString("N2") ₺</td></tr>
+                    <tr>
+                        <td class="text-muted">Durum</td>
+                        <td class="text-end">
+                            <span class="status-badge @(invoice.Status == InvoiceStatus.Paid ? "status-paid" : "status-open")">
+                                @(invoice.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık")
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Yeni tahsilat/ödeme -->
+    <div class="col-lg-8">
+        <div class="portlet">
+            <div class="portlet-title">Yeni @operationName Ekle</div>
+            <form method="post" action="/payment/add">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="InvoiceId" />
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label" asp-for="Date"></label>
+                        <input type="date" asp-for="Date" asp-format="{0:yyyy-MM-dd}" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" asp-for="Amount"></label>
+                        <input class="form-control text-end" asp-for="Amount" inputmode="decimal">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" asp-for="AccountType"></label>
+                        <select class="form-select" asp-for="AccountType" id="accountType">
+                            <option value="Safe">Kasa</option>
+                            <option value="Bank">Banka</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3" id="safeGroup">
+                        <label class="form-label">Kasa</label>
+                        <select class="form-select" asp-for="SafeId">
+                            @foreach (var safe in safes)
+                            {
+                                <option value="@safe.Id">@safe.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-none" id="bankGroup">
+                        <label class="form-label">Banka Hesabı</label>
+                        <select class="form-select" asp-for="BankAccountId">
+                            @foreach (var bank in banks)
+                            {
+                                <option value="@bank.Id">@bank.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label" asp-for="Description"></label>
+                        <input class="form-control" asp-for="Description" placeholder="İsteğe bağlı açıklama">
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-save-new"><i class="fas fa-save me-1"></i> @operationName Kaydet</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="portlet">
+            <div class="portlet-title">Geçmiş @(isSales ? "Tahsilatlar" : "Ödemeler")</div>
+            @if (invoice.Payments.Count == 0)
+            {
+                <div class="text-muted text-center py-4">Henüz @operationName.ToLower() kaydı yok.</div>
+            }
+            else
+            {
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Hesap</th>
+                            <th>Açıklama</th>
+                            <th class="text-end">Tutar</th>
+                            <th class="text-end"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in invoice.Payments.OrderByDescending(p => p.Date))
+                        {
+                            <tr>
+                                <td>@payment.Date.ToString("dd.MM.yyyy")</td>
+                                <td>
+                                    @if (payment.AccountType == PaymentAccountType.Safe)
+                                    {
+                                        <i class="fas fa-cash-register me-1 text-muted"></i>@payment.Safe?.Name
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-university me-1 text-muted"></i>@payment.BankAccount?.Name
+                                    }
+                                </td>
+                                <td class="text-muted">@payment.Description</td>
+                                <td class="text-end fw-medium">@payment.Amount.ToString("N2") ₺</td>
+                                <td class="text-end">
+                                    <form method="post" action="/payment/delete/@payment.Id" class="d-inline"
+                                          onsubmit="return confirm('Bu kayıt silinsin mi?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleAccountFields() {
+            var isSafe = document.getElementById('accountType').value === 'Safe';
+            document.getElementById('safeGroup').classList.toggle('d-none', !isSafe);
+            document.getElementById('bankGroup').classList.toggle('d-none', isSafe);
+        }
+        document.getElementById('accountType').addEventListener('change', toggleAccountFields);
+        toggleAccountFields();
+    </script>
+}

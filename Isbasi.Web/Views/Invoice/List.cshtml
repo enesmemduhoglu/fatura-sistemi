@@ -89,6 +89,7 @@
                         <th>Fatura Tarihi</th>
                         <th>Vade Tarihi</th>
                         <th class="text-end">Genel Toplam</th>
+                        <th class="text-end">@(Model.IsSales ? "Tahsil Edilen" : "Ödenen")</th>
                         <th>Durum</th>
                         <th class="text-end">İşlemler</th>
                     </tr>
@@ -112,12 +113,14 @@
                             <td>@invoice.InvoiceDate.ToString("dd.MM.yyyy")</td>
                             <td>@(invoice.DueDate?.ToString("dd.MM.yyyy") ?? "-")</td>
                             <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
+                            <td class="text-end @(invoice.PaidTotal > 0 ? "text-success fw-medium" : "text-muted")">@invoice.PaidTotal.ToString("N2") ₺</td>
                             <td>
                                 <span class="status-badge @(invoice.Status == InvoiceStatus.Paid ? "status-paid" : "status-open")">
                                     @(invoice.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık")
                                 </span>
                             </td>
                             <td class="text-end">
+                                <a href="/payment/add?invoiceId=@invoice.Id" class="btn btn-sm btn-outline-success" title="@(Model.IsSales ? "Tahsilat Ekle" : "Ödeme Ekle")"><i class="fas fa-money-bill"></i></a>
                                 <a href="@editUrl" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
                                 <form method="post" action="/invoice/delete/@invoice.Id" class="d-inline"
                                       onsubmit="return confirm('@invoice.InvoiceNumber numaralı fatura silinsin mi?');">
