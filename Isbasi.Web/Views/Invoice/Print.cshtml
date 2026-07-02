@@ -1,6 +1,7 @@
 @model Invoice
 @{
     Layout = null;
+    var company = ViewBag.Company as CompanySettings;
     string typeTitle = Model.Type switch
     {
         InvoiceType.SalesWholesale => "SATIŞ FATURASI",
@@ -61,8 +62,11 @@
     <div class="invoice-box">
         <div class="header">
             <div>
-                <div class="company-name">ASDASD</div>
-                <div>enes abc</div>
+                <div class="company-name">@(company?.CompanyName ?? "Firmam")</div>
+                @if (!string.IsNullOrEmpty(company?.OwnerName)) { <div>@company.OwnerName</div> }
+                @if (!string.IsNullOrEmpty(company?.Address)) { <div>@company.Address</div> }
+                @if (!string.IsNullOrEmpty(company?.City)) { <div>@company.District @(string.IsNullOrEmpty(company.District) ? "" : "/ ")@company.City</div> }
+                @if (!string.IsNullOrEmpty(company?.TaxNumber)) { <div>Vergi No: @company.TaxNumber</div> }
             </div>
             <div class="doc-title">
                 <h1>@typeTitle</h1>

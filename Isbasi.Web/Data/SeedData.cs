@@ -6,6 +6,29 @@ public static class SeedData
 {
     public static void Initialize(AppDbContext db)
     {
+        if (!db.CompanySettings.Any())
+        {
+            db.CompanySettings.Add(new CompanySettings
+            {
+                CompanyName = "Enes",
+                OwnerName = "Enes",
+                Email = "eneshan034@gmail.com",
+                City = "İstanbul"
+            });
+            db.SaveChanges();
+        }
+
+        if (!db.Users.Any())
+        {
+            db.Users.Add(new User
+            {
+                Email = "eneshan034@gmail.com",
+                DisplayName = "Enes",
+                PasswordHash = PasswordHasher.Hash("enes123")
+            });
+            db.SaveChanges();
+        }
+
         if (db.Firms.Any()) return;
 
         var firms = new List<Firm>

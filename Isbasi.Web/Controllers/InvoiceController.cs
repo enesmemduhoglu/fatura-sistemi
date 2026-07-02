@@ -147,6 +147,8 @@ public class InvoiceController : Controller
             .Include(i => i.Lines)
             .FirstOrDefaultAsync(i => i.Id == id);
         if (invoice == null) return NotFound();
+
+        ViewBag.Company = await _db.CompanySettings.AsNoTracking().FirstOrDefaultAsync();
         return View(invoice);
     }
 

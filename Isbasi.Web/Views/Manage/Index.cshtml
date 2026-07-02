@@ -1,0 +1,64 @@
+@model CompanySettings
+@{
+    ViewData["Title"] = "Firma Bilgilerim";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Firma Bilgilerim</h1>
+</div>
+
+<div class="portlet">
+    <div class="text-muted small mb-3">
+        Bu bilgiler üst bardaki firma adında ve fatura çıktılarındaki satıcı bölümünde kullanılır.
+    </div>
+    <form method="post" action="/manage/index">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label" asp-for="CompanyName"></label>
+                <input class="form-control" asp-for="CompanyName" />
+                <span asp-validation-for="CompanyName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="OwnerName"></label>
+                <input class="form-control" asp-for="OwnerName" />
+            </div>
+            <div class="col-md-12">
+                <label class="form-label" asp-for="Address"></label>
+                <textarea class="form-control" asp-for="Address" rows="2"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="City"></label>
+                <input class="form-control" asp-for="City" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="District"></label>
+                <input class="form-control" asp-for="District" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="TaxOffice"></label>
+                <input class="form-control" asp-for="TaxOffice" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="TaxNumber"></label>
+                <input class="form-control" asp-for="TaxNumber" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Phone"></label>
+                <input class="form-control" asp-for="Phone" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" asp-for="Email"></label>
+                <input class="form-control" asp-for="Email" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-save"><i class="fas fa-save me-1"></i> Kaydet</button>
+        </div>
+    </form>
+</div>
