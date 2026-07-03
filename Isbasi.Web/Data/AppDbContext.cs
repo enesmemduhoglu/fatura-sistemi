@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Cheque> Cheques => Set<Cheque>();
+    public DbSet<FreelanceReceipt> FreelanceReceipts => Set<FreelanceReceipt>();
     public DbSet<CompanySettings> CompanySettings => Set<CompanySettings>();
     public DbSet<User> Users => Set<User>();
 
@@ -69,6 +70,12 @@ public class AppDbContext : DbContext
             .HasOne(c => c.BankAccount)
             .WithMany()
             .HasForeignKey(c => c.BankAccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<FreelanceReceipt>()
+            .HasOne(r => r.Firm)
+            .WithMany()
+            .HasForeignKey(r => r.FirmId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

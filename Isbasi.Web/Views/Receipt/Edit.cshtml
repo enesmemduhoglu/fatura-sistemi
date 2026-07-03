@@ -1,0 +1,115 @@
+@model FreelanceReceipt
+@{
+    bool isIssued = Model.Type == ReceiptType.Issued;
+    string typeTitle = isIssued ? "Verilen Serbest Meslek Makbuzu" : "Alınan Serbest Meslek Makbuzu";
+    ViewData["Title"] = Model.Id == 0 ? "Yeni Makbuz" : "Makbuz Düzenle";
+    var firms = (List<Firm>)ViewBag.Firms;
+    string listUrl = $"/receipt?kind={(isIssued ? "issued" : "received")}";
+}
+
+<div class="page-header">
+    <h1 class="page-title"><span class="breadcrumb-part"><a href="@listUrl" class="text-decoration-none">@typeTitle</a> &gt;</span> @ViewData["Title"]</h1>
+</div>
+
+<div class="portlet">
+    <form method="post" action="/receipt/save">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Type" />
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">@(isIssued ? "Müşteri" : "Tedarikçi") *</label>
+                        <select asp-for="FirmId" class="form-select">
+                            <option value="">Seçin...</option>
+                            @foreach (var firm in firms)
+                            {
+                                <option value="@firm.Id" selected="@(firm.Id == Model.FirmId)">@firm.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" asp-for="Date"></label>
+                        <input type="date" class="form-control" asp-for="Date" asp-format="{0:yyyy-MM-dd}" />
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label" asp-for="ReceiptNumber"></label>
+                        <input class="form-control" asp-for="ReceiptNumber" placeholder="Boş bırakılırsa otomatik verilir" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" asp-for="Status"></label>
+                        <select asp-for="Status" class="form-select">
+                            <option value="Open">Açık</option>
+                            <option value="Paid">Ödendi</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" asp-for="GrossAmount"></label>
+                        <input class="form-control" asp-for="GrossAmount" id="grossInput" />
+                        <span asp-validation-for="GrossAmount" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" asp-for="StopajRate"></label>
+                        <input class="form-control" asp-for="StopajRate" id="stopajRateInput" />
+                        <span asp-validation-for="StopajRate" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" asp-for="VatRate"></label>
+                        <input class="form-control" asp-for="VatRate" id="vatRateInput" />
+                        <span asp-validation-for="VatRate" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" asp-for="Description"></label>
+                        <input class="form-control" asp-for="Description" placeholder="İsteğe bağlı açıklama" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead><tr><th colspan="2" style="background:#f7f8fa">Tutar (TL)</th></tr></thead>
+                        <tbody>
+                            <tr><td>Brüt Ücret</td><td class="text-end" id="sumGross">0,00 ₺</td></tr>
+                            <tr><td>Stopaj Kesintisi (−)</td><td class="text-end text-danger" id="sumStopaj">0,00 ₺</td></tr>
+                            <tr><td>KDV (+)</td><td class="text-end" id="sumVat">0,00 ₺</td></tr>
+                            <tr class="fw-bold"><td>Net (@(isIssued ? "Tahsil Edilecek" : "Ödenecek"))</td><td class="text-end" id="sumNet">0,00 ₺</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-save"><i class="fas fa-save me-1"></i> Kaydet</button>
+            <a href="@listUrl" class="btn btn-cancel"><i class="fas fa-times me-1"></i> Vazgeç</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    (function () {
+        function parseNum(v) { return parseFloat(String(v).replace(',', '.')) || 0; }
+        function fmt(n) { return n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺'; }
+
+        var gross = document.getElementById('grossInput');
+        var stopajRate = document.getElementById('stopajRateInput');
+        var vatRate = document.getElementById('vatRateInput');
+
+        function refresh() {
+            var g = parseNum(gross.value);
+            var stopaj = Math.round(g * parseNum(stopajRate.value)) / 100;
+            var vat = Math.round(g * parseNum(vatRate.value)) / 100;
+            document.getElementById('sumGross').textContent = fmt(g);
+            document.getElementById('sumStopaj').textContent = fmt(stopaj);
+            document.getElementById('sumVat').textContent = fmt(vat);
+            document.getElementById('sumNet').textContent = fmt(g - stopaj + vat);
+        }
+        [gross, stopajRate, vatRate].forEach(function (el) { el.addEventListener('input', refresh); });
+        refresh();
+    })();
+</script>
+}

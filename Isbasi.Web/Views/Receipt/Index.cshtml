@@ -1,0 +1,93 @@
+@model List<FreelanceReceipt>
+@{
+    string kind = (string)ViewBag.Kind;
+    bool isIssued = kind == "issued";
+    ViewData["Title"] = isIssued ? "Verilen Serbest Meslek Makbuzu" : "Alınan Serbest Meslek Makbuzu";
+    string? status = ViewBag.Status as string;
+}
+
+<div class="page-header">
+    <h1 class="page-title">@ViewData["Title"]</h1>
+    <a href="/receipt/edit?kind=@kind" class="btn btn-isbasi"><i class="fas fa-plus me-1"></i> Yeni Makbuz</a>
+</div>
+
+<div class="portlet">
+    <form method="get" class="row g-2 mb-3">
+        <input type="hidden" name="kind" value="@kind" />
+        <div class="col-md-2">
+            <select name="status" class="form-select" onchange="this.form.submit()">
+                <option value="" selected="@(string.IsNullOrEmpty(status))">Hepsi</option>
+                <option value="Open" selected="@(status == "Open")">Açık</option>
+                <option value="Paid" selected="@(status == "Paid")">Ödendi</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <input name="q" value="@ViewBag.Query" class="form-control" placeholder="Firma ya da makbuz no ile ara..." />
+                <button type="submit" class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+    </form>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="fas fa-file-invoice"></i>
+            <div class="title">Henüz makbuz bulunmuyor</div>
+            <div>"Yeni Makbuz" butonu ile ilk makbuzunuzu oluşturun.</div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Makbuz No</th>
+                        <th>@(isIssued ? "Müşteri" : "Tedarikçi")</th>
+                        <th>Tarih</th>
+                        <th class="text-end">Brüt Ücret</th>
+                        <th class="text-end">Stopaj</th>
+                        <th class="text-end">KDV</th>
+                        <th class="text-end">Net</th>
+                        <th>Durum</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var receipt in Model)
+                    {
+                        <tr>
+                            <td class="fw-medium">@receipt.ReceiptNumber</td>
+                            <td>@receipt.Firm?.Name</td>
+                            <td>@receipt.Date.ToString("dd.MM.yyyy")</td>
+                            <td class="text-end">@receipt.GrossAmount.ToString("N2") ₺</td>
+                            <td class="text-end text-muted">@receipt.StopajAmount.ToString("N2") ₺</td>
+                            <td class="text-end text-muted">@receipt.VatAmount.ToString("N2") ₺</td>
+                            <td class="text-end fw-medium">@receipt.NetAmount.ToString("N2") ₺</td>
+                            <td>
+                                <span class="status-badge @(receipt.Status == InvoiceStatus.Paid ? "status-paid" : "status-open")">
+                                    @(receipt.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="/receipt/print/@receipt.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Yazdır"><i class="fas fa-print"></i></a>
+                                <a href="/receipt/edit?id=@receipt.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
+                                <form method="post" action="/receipt/delete/@receipt.Id" class="d-inline"
+                                      onsubmit="return confirm('@receipt.ReceiptNumber numaralı makbuz silinsin mi?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="text-muted small">
+            Toplam @Model.Count makbuz — Brüt: <strong>@Model.Sum(r => r.GrossAmount).ToString("N2") ₺</strong>,
+            Stopaj: <strong>@Model.Sum(r => r.StopajAmount).ToString("N2") ₺</strong>,
+            Net: <strong>@Model.Sum(r => r.NetAmount).ToString("N2") ₺</strong>
+        </div>
+    }
+</div>

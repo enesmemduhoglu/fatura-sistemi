@@ -75,11 +75,14 @@ public class DefinitionsController : Controller
 
         bool hasInvoices = await _db.Invoices.AnyAsync(i => i.FirmId == id);
         bool hasCheques = await _db.Cheques.AnyAsync(c => c.FirmId == id);
-        if (hasInvoices || hasCheques)
+        bool hasReceipts = await _db.FreelanceReceipts.AnyAsync(r => r.FirmId == id);
+        if (hasInvoices || hasCheques || hasReceipts)
         {
             TempData["Error"] = hasInvoices
                 ? "Bu firmaya ait faturalar olduğu için silinemez."
-                : "Bu firmaya ait çekler olduğu için silinemez.";
+                : hasCheques
+                    ? "Bu firmaya ait çekler olduğu için silinemez."
+                    : "Bu firmaya ait serbest meslek makbuzları olduğu için silinemez.";
         }
         else
         {

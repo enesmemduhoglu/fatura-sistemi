@@ -66,7 +66,7 @@
                 <ul class="submenu">
                     <li><a href="/invoice/sales"><i class="fas fa-file-invoice"></i><span>Satış Faturaları</span></a></li>
                     <li><a href="/invoice/orders"><i class="fas fa-shopping-basket"></i><span>Siparişler</span></a></li>
-                    <li><a href="/comingsoon?title=Verilen Serbest Meslek Makbuzu"><i class="fas fa-file-invoice"></i><span>Verilen Serbest Meslek Makbuzu</span></a></li>
+                    <li><a href="/receipt?kind=issued"><i class="fas fa-file-invoice"></i><span>Verilen Serbest Meslek Makbuzu</span></a></li>
                 </ul>
             </li>
             <li class="menu-item has-sub @(currentPath.StartsWith("/invoice/purchase") && !currentPath.StartsWith("/invoice/purchaseservices") ? "active" : "")">
@@ -74,7 +74,7 @@
                 <ul class="submenu">
                     <li><a href="/invoice/purchase"><i class="fas fa-file-invoice"></i><span>Alış Faturaları</span></a></li>
                     <li><a href="/invoice/purchaseorders"><i class="fas fa-shopping-basket"></i><span>Alış Sipariş</span></a></li>
-                    <li><a href="/comingsoon?title=Alınan Serbest Meslek Makbuzu"><i class="fas fa-file-invoice"></i><span>Alınan Serbest Meslek Makbuzu</span></a></li>
+                    <li><a href="/receipt?kind=received"><i class="fas fa-file-invoice"></i><span>Alınan Serbest Meslek Makbuzu</span></a></li>
                 </ul>
             </li>
             <li class="menu-item @Active("/invoice/purchaseservices")">

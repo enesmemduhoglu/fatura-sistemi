@@ -148,6 +148,11 @@ public class ReportsController : Controller
             .Where(i => i.InvoiceDate.Year == reportYear)
             .Select(i => new { i.InvoiceDate, i.Type, i.VatTotal })
             .ToListAsync();
+        // SMM KDV'leri de beyana girer: verilen makbuz hesaplanan, alınan indirilecek
+        var receipts = await _db.FreelanceReceipts.AsNoTracking()
+            .Where(r => r.Date.Year == reportYear)
+            .Select(r => new { r.Date, r.Type, r.GrossAmount, r.VatRate })
+            .ToListAsync();
 
         var vm = new VatReportViewModel { Year = reportYear };
         var culture = new CultureInfo("tr-TR");
@@ -155,15 +160,20 @@ public class ReportsController : Controller
         for (int month = 1; month <= 12; month++)
         {
             var monthInvoices = invoices.Where(i => i.InvoiceDate.Month == month).ToList();
+            var monthReceipts = receipts.Where(r => r.Date.Month == month).ToList();
             vm.Months.Add(new VatMonthRow
             {
                 Month = culture.DateTimeFormat.GetMonthName(month),
                 CalculatedVat = monthInvoices
                     .Where(i => i.Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail)
-                    .Sum(i => i.VatTotal),
+                    .Sum(i => i.VatTotal)
+                    + monthReceipts.Where(r => r.Type == ReceiptType.Issued)
+                        .Sum(r => Math.Round(r.GrossAmount * r.VatRate / 100m, 2)),
                 DeductibleVat = monthInvoices
                     .Where(i => i.Type is InvoiceType.Purchase or InvoiceType.Expense)
                     .Sum(i => i.VatTotal)
+                    + monthReceipts.Where(r => r.Type == ReceiptType.Received)
+                        .Sum(r => Math.Round(r.GrossAmount * r.VatRate / 100m, 2))
             });
         }
 

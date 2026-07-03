@@ -200,5 +200,26 @@ public static class SeedData
                 Amount = 12000, Status = ChequeStatus.Portfolio
             });
         db.SaveChanges();
+
+        // Örnek serbest meslek makbuzları (SMM serisi)
+        int smmYear = DateTime.Today.Year;
+        db.FreelanceReceipts.AddRange(
+            new FreelanceReceipt
+            {
+                ReceiptNumber = $"SMM{smmYear}{1:D9}",
+                Type = ReceiptType.Issued, FirmId = firms[0].Id,
+                Date = DateTime.Today.AddDays(-12),
+                GrossAmount = 10000, StopajRate = 20, VatRate = 20,
+                Description = "Danışmanlık hizmeti", Status = InvoiceStatus.Paid
+            },
+            new FreelanceReceipt
+            {
+                ReceiptNumber = $"SMM{smmYear}{2:D9}",
+                Type = ReceiptType.Received, FirmId = firms[3].Id,
+                Date = DateTime.Today.AddDays(-4),
+                GrossAmount = 6000, StopajRate = 20, VatRate = 20,
+                Description = "Mali müşavirlik ücreti", Status = InvoiceStatus.Open
+            });
+        db.SaveChanges();
     }
 }
