@@ -120,6 +120,8 @@
                     @foreach (var invoice in Model.Invoices)
                     {
                         string editUrl = $"{baseUrl}/edit?id={invoice.Id}";
+                        bool overdue = !Model.IsOrderMode && invoice.Status == InvoiceStatus.Open
+                            && invoice.DueDate.HasValue && invoice.DueDate.Value.Date < DateTime.Today;
                         <tr>
                             <td class="fw-medium">@invoice.InvoiceNumber</td>
                             <td>@invoice.Firm?.Name</td>
@@ -135,7 +137,10 @@
                                 })
                             </td>
                             <td>@invoice.InvoiceDate.ToString("dd.MM.yyyy")</td>
-                            <td>@(invoice.DueDate?.ToString("dd.MM.yyyy") ?? "-")</td>
+                            <td class="@(overdue ? "text-danger fw-medium" : "")">
+                                @(invoice.DueDate?.ToString("dd.MM.yyyy") ?? "-")
+                                @if (overdue) { <i class="fas fa-exclamation-circle" title="Vadesi geçti"></i> }
+                            </td>
                             <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
                             @if (!Model.IsOrderMode)
                             {
@@ -181,6 +186,7 @@
                                 {
                                     <a href="/payment/add?invoiceId=@invoice.Id" class="btn btn-sm btn-outline-success" title="@(Model.IsSales ? "Tahsilat Ekle" : "Ödeme Ekle")"><i class="fas fa-money-bill"></i></a>
                                 }
+                                <a href="/invoice/copy/@invoice.Id" class="btn btn-sm btn-outline-secondary" title="Kopyala"><i class="fas fa-copy"></i></a>
                                 <a href="/invoice/print/@invoice.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Yazdır"><i class="fas fa-print"></i></a>
                                 <a href="@editUrl" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
                                 <form method="post" action="/invoice/delete/@invoice.Id" class="d-inline"

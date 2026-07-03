@@ -99,18 +99,24 @@
                     <div class="col-6"><input id="firmTaxNumber" class="form-control underline-input" placeholder="Vergi No/T.C. Kimlik No" readonly></div>
                 </div>
                 <div class="form-check mt-3">
-                    <input class="form-check-input" type="checkbox" id="differentDelivery">
+                    <input class="form-check-input" type="checkbox" id="differentDelivery"
+                           checked="@(!string.IsNullOrWhiteSpace(Model.DeliveryAddress))">
                     <label class="form-check-label" for="differentDelivery">Teslimat adresi farklı</label>
+                </div>
+                <div id="deliveryAddressGroup" class="mt-2" style="display:none">
+                    <textarea asp-for="DeliveryAddress" class="form-control" rows="2"
+                              placeholder="Teslimat adresi (fatura çıktısında gösterilir)"></textarea>
                 </div>
             </div>
 
             <!-- Sağ: fatura genel bilgileri -->
             <div class="col-lg-6">
-                <ul class="nav nav-tabs mb-3">
-                    <li class="nav-item"><a class="nav-link active text-success fw-medium" href="#">Genel</a></li>
-                    <li class="nav-item"><a class="nav-link text-muted" href="#" onclick="return false;">Diğer</a></li>
+                <ul class="nav nav-tabs mb-3" id="infoTabs">
+                    <li class="nav-item"><a class="nav-link active text-success fw-medium" href="#" data-pane="generalPane">Genel</a></li>
+                    <li class="nav-item"><a class="nav-link text-muted" href="#" data-pane="otherPane">Diğer</a></li>
                 </ul>
 
+                <div id="generalPane">
                 <div class="row mb-3 align-items-center">
                     <label class="col-4 form-label mb-0">Fatura Tarihi</label>
                     <div class="col-8"><input type="date" asp-for="InvoiceDate" asp-format="{0:yyyy-MM-dd}" class="form-control"></div>
@@ -166,6 +172,19 @@
                         </div>
                     </div>
                 }
+                </div>
+
+                <div id="otherPane" style="display:none">
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-4 form-label mb-0">İrsaliye Numarası</label>
+                        <div class="col-8"><input asp-for="DeliveryNoteNumber" class="form-control" placeholder="Sevk irsaliyesi numarası"></div>
+                    </div>
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-4 form-label mb-0">İrsaliye Tarihi</label>
+                        <div class="col-8"><input type="date" asp-for="DeliveryNoteDate" asp-format="{0:yyyy-MM-dd}" class="form-control"></div>
+                    </div>
+                    <div class="text-muted small">İrsaliye bilgileri fatura çıktısında gösterilir.</div>
+                </div>
             </div>
         </div>
 
@@ -314,4 +333,33 @@
         };
     </script>
     <script src="~/js/invoice-form.js" asp-append-version="true"></script>
+    <script>
+        // Genel / Diğer sekmeleri
+        document.querySelectorAll('#infoTabs .nav-link').forEach(function (tab) {
+            tab.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelectorAll('#infoTabs .nav-link').forEach(function (t) {
+                    t.classList.remove('active', 'text-success', 'fw-medium');
+                    t.classList.add('text-muted');
+                });
+                tab.classList.add('active', 'text-success', 'fw-medium');
+                tab.classList.remove('text-muted');
+                document.getElementById('generalPane').style.display = tab.dataset.pane === 'generalPane' ? '' : 'none';
+                document.getElementById('otherPane').style.display = tab.dataset.pane === 'otherPane' ? '' : 'none';
+            });
+        });
+
+        // Teslimat adresi farklı: işaretliyse adres alanı görünür, kaldırılınca temizlenir
+        (function () {
+            var checkbox = document.getElementById('differentDelivery');
+            var group = document.getElementById('deliveryAddressGroup');
+            var input = group.querySelector('textarea');
+            function refresh() {
+                group.style.display = checkbox.checked ? '' : 'none';
+                if (!checkbox.checked) input.value = '';
+            }
+            checkbox.addEventListener('change', refresh);
+            refresh();
+        })();
+    </script>
 }

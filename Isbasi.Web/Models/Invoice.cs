@@ -55,6 +55,16 @@ public class Invoice
     [Display(Name = "Kategori")]
     public string? Category { get; set; }
 
+    // "Diğer" sekmesi: irsaliye bilgileri ve farklı teslimat adresi
+    [Display(Name = "İrsaliye Numarası")]
+    public string? DeliveryNoteNumber { get; set; }
+
+    [Display(Name = "İrsaliye Tarihi")]
+    public DateTime? DeliveryNoteDate { get; set; }
+
+    [Display(Name = "Teslimat Adresi")]
+    public string? DeliveryAddress { get; set; }
+
     [Display(Name = "Açıklama")]
     public string? Description { get; set; }
 

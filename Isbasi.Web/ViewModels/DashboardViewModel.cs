@@ -26,6 +26,16 @@ public class DashboardViewModel
     public decimal Receivables { get; set; }   // tahsil edilecek (açık satış faturaları)
     public decimal Payables { get; set; }      // ödenecek (açık alış faturaları)
 
+    // Portföydeki çekler: alınan = tahsil edilecek, verilen = ödenecek
+    public decimal ChequesReceivable { get; set; }
+    public decimal ChequesPayable { get; set; }
+
+    // Vadesi geçen açık faturalar
+    public List<Invoice> OverdueSales { get; set; } = new();
+    public List<Invoice> OverduePurchases { get; set; } = new();
+    public decimal OverdueSalesTotal => OverdueSales.Sum(i => i.GrandTotal);
+    public decimal OverduePurchasesTotal => OverduePurchases.Sum(i => i.GrandTotal);
+
     public decimal SalesLastMonth { get; set; }
     public decimal SalesThisMonth { get; set; }
 

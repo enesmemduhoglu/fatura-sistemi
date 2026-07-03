@@ -85,10 +85,19 @@
                 @if (!string.IsNullOrEmpty(Model.Firm?.TaxOffice)) { <div>Vergi Dairesi: @Model.Firm.TaxOffice</div> }
                 @if (!string.IsNullOrEmpty(Model.Firm?.TaxNumber)) { <div>Vergi No: @Model.Firm.TaxNumber</div> }
             </div>
+            @if (!string.IsNullOrWhiteSpace(Model.DeliveryAddress))
+            {
+                <div class="party">
+                    <h3>Teslimat Adresi</h3>
+                    <div>@Model.DeliveryAddress</div>
+                </div>
+            }
             <div class="dates">
                 <div><span>Fatura Tarihi:</span> <strong>@Model.InvoiceDate.ToString("dd.MM.yyyy")</strong></div>
                 @if (Model.ShipmentDate.HasValue) { <div><span>Sevk Tarihi:</span> @Model.ShipmentDate.Value.ToString("dd.MM.yyyy")</div> }
                 @if (Model.DueDate.HasValue) { <div><span>Vade Tarihi:</span> @Model.DueDate.Value.ToString("dd.MM.yyyy")</div> }
+                @if (!string.IsNullOrWhiteSpace(Model.DeliveryNoteNumber)) { <div><span>İrsaliye No:</span> @Model.DeliveryNoteNumber</div> }
+                @if (Model.DeliveryNoteDate.HasValue) { <div><span>İrsaliye Tarihi:</span> @Model.DeliveryNoteDate.Value.ToString("dd.MM.yyyy")</div> }
                 <div><span>Döviz:</span> @Model.Currency</div>
             </div>
         </div>

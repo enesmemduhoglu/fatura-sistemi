@@ -45,7 +45,26 @@ public class HomeController : Controller
         vm.Receivables = invoices.Where(i => i.IsSales && i.Status == InvoiceStatus.Open).Sum(i => i.GrandTotal);
         vm.Payables = invoices.Where(i => !i.IsSales && i.Status == InvoiceStatus.Open).Sum(i => i.GrandTotal);
 
+        // Portföydeki çekler mini bilanço ve ÇEK panelinde gösterilir
+        var portfolioCheques = await _db.Cheques.AsNoTracking()
+            .Where(c => c.Status == ChequeStatus.Portfolio)
+            .Select(c => new { c.Type, c.Amount })
+            .ToListAsync();
+        vm.ChequesReceivable = portfolioCheques.Where(c => c.Type == ChequeType.Received).Sum(c => c.Amount);
+        vm.ChequesPayable = portfolioCheques.Where(c => c.Type == ChequeType.Issued).Sum(c => c.Amount);
+
         var today = DateTime.Today;
+
+        // Vadesi geçen açık faturalar (yıldan bağımsız)
+        var overdue = await _db.Invoices.AsNoTracking()
+            .Include(i => i.Firm)
+            .Where(i => i.Status == InvoiceStatus.Open
+                && i.Type != InvoiceType.SalesOrder && i.Type != InvoiceType.PurchaseOrder
+                && i.DueDate != null && i.DueDate < today)
+            .OrderBy(i => i.DueDate)
+            .ToListAsync();
+        vm.OverdueSales = overdue.Where(i => i.IsSales).ToList();
+        vm.OverduePurchases = overdue.Where(i => !i.IsSales).ToList();
         var sales = invoices.Where(i => i.IsSales).ToList();
 
         vm.SalesThisMonth = sales.Where(i => i.InvoiceDate.Month == today.Month).Sum(i => i.GrandTotal);

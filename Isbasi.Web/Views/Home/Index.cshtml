@@ -5,7 +5,7 @@
     string[] months = { "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN", "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK" };
     decimal totalIncome = Model.MonthlyIncome.Sum();
     decimal totalPayment = Model.MonthlyPayment.Sum();
-    decimal netAsset = Model.Receivables - Model.Payables;
+    decimal netAsset = (Model.Receivables + Model.ChequesReceivable) - (Model.Payables + Model.ChequesPayable);
 }
 
 <div class="page-header">
@@ -98,9 +98,9 @@
                 </tr>
                 <tr>
                     <td>Tahsil Edilecek Çekler</td>
-                    <td class="amount">0,00 ₺</td>
+                    <td class="amount">@Model.ChequesReceivable.ToString("N2") ₺</td>
                     <td>Ödenecek Çekler</td>
-                    <td class="amount">0,00 ₺</td>
+                    <td class="amount">@Model.ChequesPayable.ToString("N2") ₺</td>
                 </tr>
                 <tr>
                     <td>Devir Edilen Bakiye</td>
@@ -110,9 +110,9 @@
                 </tr>
                 <tr class="total">
                     <td>Toplam Varlık</td>
-                    <td class="amount">@Model.Receivables.ToString("N2") ₺</td>
+                    <td class="amount">@((Model.Receivables + Model.ChequesReceivable).ToString("N2")) ₺</td>
                     <td>Toplam Yükümlülük</td>
-                    <td class="amount">@Model.Payables.ToString("N2") ₺</td>
+                    <td class="amount">@((Model.Payables + Model.ChequesPayable).ToString("N2")) ₺</td>
                 </tr>
                 <tr class="result">
                     <td></td>
@@ -124,6 +124,81 @@
         </table>
     </div>
 </div>
+
+@if (Model.OverdueSales.Count > 0 || Model.OverduePurchases.Count > 0)
+{
+    <!-- Vadesi Geçen Faturalar -->
+    <div class="portlet">
+        <div class="portlet-title"><i class="fas fa-exclamation-circle text-danger me-2"></i>Vadesi Geçen Faturalar</div>
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-medium small">Tahsil Edilecek (@Model.OverdueSales.Count fatura)</span>
+                    <span class="fw-bold text-danger">@Model.OverdueSalesTotal.ToString("N2") ₺</span>
+                </div>
+                @if (Model.OverdueSales.Count == 0)
+                {
+                    <div class="text-muted small">Vadesi geçen satış faturası yok.</div>
+                }
+                else
+                {
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var invoice in Model.OverdueSales.Take(5))
+                            {
+                                int days = (DateTime.Today - invoice.DueDate!.Value.Date).Days;
+                                <tr>
+                                    <td><a href="/invoice/sales/edit?id=@invoice.Id" class="text-decoration-none fw-medium">@invoice.InvoiceNumber</a></td>
+                                    <td class="small">@invoice.Firm?.Name</td>
+                                    <td class="small text-danger">@days gün gecikti</td>
+                                    <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @if (Model.OverdueSales.Count > 5)
+                    {
+                        <a href="/invoice/sales?status=Open" class="small text-decoration-none">Tümünü gör (@Model.OverdueSales.Count) →</a>
+                    }
+                }
+            </div>
+            <div class="col-lg-6">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-medium small">Ödenecek (@Model.OverduePurchases.Count fatura)</span>
+                    <span class="fw-bold text-danger">@Model.OverduePurchasesTotal.ToString("N2") ₺</span>
+                </div>
+                @if (Model.OverduePurchases.Count == 0)
+                {
+                    <div class="text-muted small">Vadesi geçen alış/gider faturası yok.</div>
+                }
+                else
+                {
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var invoice in Model.OverduePurchases.Take(5))
+                            {
+                                int days = (DateTime.Today - invoice.DueDate!.Value.Date).Days;
+                                string editUrl = invoice.Type == InvoiceType.Expense
+                                    ? $"/invoice/purchaseservices/edit?id={invoice.Id}"
+                                    : $"/invoice/purchase/edit?id={invoice.Id}";
+                                <tr>
+                                    <td><a href="@editUrl" class="text-decoration-none fw-medium">@invoice.InvoiceNumber</a></td>
+                                    <td class="small">@invoice.Firm?.Name</td>
+                                    <td class="small text-danger">@days gün gecikti</td>
+                                    <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @if (Model.OverduePurchases.Count > 5)
+                    {
+                        <a href="/invoice/purchase?status=Open" class="small text-decoration-none">Tümünü gör (@Model.OverduePurchases.Count) →</a>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
 
 <div class="row">
     <!-- Borçlarım ve Alacaklarım -->
@@ -237,10 +312,20 @@
             </table>
         </div>
         <div class="col-md-4">
-            <div class="mini-stat-header"><span><i class="fas fa-money-check me-2"></i>ÇEK</span><span>0,00TL</span></div>
+            <div class="mini-stat-header"><span><i class="fas fa-money-check me-2"></i>ÇEK</span><span>@((Model.ChequesReceivable - Model.ChequesPayable).ToString("N2"))TL</span></div>
             <table class="table table-sm mt-2 mb-0">
                 <thead><tr><th>TÜRÜ</th><th class="text-end">BAKİYE</th><th class="text-end">BAKİYE TL</th></tr></thead>
-                <tbody><tr><td colspan="3" class="text-muted text-center py-3">Çek bulunmuyor</td></tr></tbody>
+                <tbody>
+                    @if (Model.ChequesReceivable == 0 && Model.ChequesPayable == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted text-center py-3">Portföyde çek bulunmuyor</td></tr>
+                    }
+                    else
+                    {
+                        <tr><td><a href="/cheque?kind=received&status=Portfolio" class="text-decoration-none"><i class="fas fa-money-check me-1 text-muted"></i>Alınan Çekler</a></td><td class="text-end">@Model.ChequesReceivable.ToString("N2") TL</td><td class="text-end">@Model.ChequesReceivable.ToString("N2") TL</td></tr>
+                        <tr><td><a href="/cheque?kind=issued&status=Portfolio" class="text-decoration-none"><i class="fas fa-money-check me-1 text-muted"></i>Verilen Çekler</a></td><td class="text-end">-@Model.ChequesPayable.ToString("N2") TL</td><td class="text-end">-@Model.ChequesPayable.ToString("N2") TL</td></tr>
+                    }
+                </tbody>
             </table>
         </div>
     </div>

@@ -283,6 +283,47 @@ public class InvoiceController : Controller
         _ => RedirectToAction(nameof(Sales))
     };
 
+    // Belgeyi satırlarıyla yeni taslak olarak forma yükler; kayıt normal Save akışıyla olur
+    [HttpGet("copy/{id:int}")]
+    public async Task<IActionResult> Copy(int id)
+    {
+        var source = await _db.Invoices.AsNoTracking()
+            .Include(i => i.Lines)
+            .FirstOrDefaultAsync(i => i.Id == id);
+        if (source == null) return NotFound();
+
+        var copy = new Invoice
+        {
+            Type = source.Type,
+            FirmId = source.FirmId,
+            InvoiceDate = DateTime.Now,
+            Currency = source.Currency,
+            Category = source.Category,
+            Description = source.Description,
+            DeliveryAddress = source.DeliveryAddress,
+            GeneralDiscountValue = source.GeneralDiscountValue,
+            GeneralDiscountType = source.GeneralDiscountType,
+            OrderState = source.IsOrder ? OrderStatus.Waiting : null,
+            Lines = source.Lines.Select(l => new InvoiceLine
+            {
+                ProductId = l.ProductId,
+                ServiceId = l.ServiceId,
+                ItemName = l.ItemName,
+                Quantity = l.Quantity,
+                Unit = l.Unit,
+                UnitPrice = l.UnitPrice,
+                VatRate = l.VatRate,
+                DiscountValue = l.DiscountValue,
+                DiscountType = l.DiscountType
+            }).ToList()
+        };
+        InvoiceCalculator.Calculate(copy);
+
+        TempData["Success"] = $"{source.InvoiceNumber} numaralı belge kopyalandı; kaydedilmemiş taslak olarak açıldı.";
+        await FillEditViewBags(copy);
+        return View("Edit", copy);
+    }
+
     // Sipariş: bekleyen siparişi faturaya kopyalar ve Faturalandı işaretler
     [HttpPost("convert/{id:int}")]
     [ValidateAntiForgeryToken]
