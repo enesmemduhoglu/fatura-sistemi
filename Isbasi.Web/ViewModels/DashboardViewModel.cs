@@ -33,8 +33,8 @@ public class DashboardViewModel
     // Vadesi geçen açık faturalar
     public List<Invoice> OverdueSales { get; set; } = new();
     public List<Invoice> OverduePurchases { get; set; } = new();
-    public decimal OverdueSalesTotal => OverdueSales.Sum(i => i.GrandTotal);
-    public decimal OverduePurchasesTotal => OverduePurchases.Sum(i => i.GrandTotal);
+    public decimal OverdueSalesTotal => OverdueSales.Sum(i => i.GrandTotalTry);
+    public decimal OverduePurchasesTotal => OverduePurchases.Sum(i => i.GrandTotalTry);
 
     public decimal SalesLastMonth { get; set; }
     public decimal SalesThisMonth { get; set; }

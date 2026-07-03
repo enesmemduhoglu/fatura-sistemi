@@ -40,15 +40,16 @@ public class HomeController : Controller
             .Select(p => new { p.Date, p.Amount })
             .ToListAsync();
 
+        // Dövizli belgeler TL karşılığıyla toplanır
         foreach (var inv in invoices)
         {
             int m = inv.InvoiceDate.Month - 1;
-            if (inv.IsSales) vm.MonthlyIncome[m] += inv.GrandTotal;
-            else vm.MonthlyPayment[m] += inv.GrandTotal;
+            if (inv.IsSales) vm.MonthlyIncome[m] += inv.GrandTotalTry;
+            else vm.MonthlyPayment[m] += inv.GrandTotalTry;
         }
 
-        vm.Receivables = invoices.Where(i => i.IsSales && i.Status == InvoiceStatus.Open).Sum(i => i.GrandTotal);
-        vm.Payables = invoices.Where(i => !i.IsSales && i.Status == InvoiceStatus.Open).Sum(i => i.GrandTotal);
+        vm.Receivables = invoices.Where(i => i.IsSales && i.Status == InvoiceStatus.Open).Sum(i => i.GrandTotalTry);
+        vm.Payables = invoices.Where(i => !i.IsSales && i.Status == InvoiceStatus.Open).Sum(i => i.GrandTotalTry);
 
         // Portföydeki çekler mini bilanço ve ÇEK panelinde gösterilir
         var portfolioCheques = await _db.Cheques.AsNoTracking()
@@ -72,8 +73,8 @@ public class HomeController : Controller
         vm.OverduePurchases = overdue.Where(i => !i.IsSales).ToList();
         var sales = invoices.Where(i => i.IsSales).ToList();
 
-        vm.SalesThisMonth = sales.Where(i => i.InvoiceDate.Month == today.Month).Sum(i => i.GrandTotal);
-        vm.SalesLastMonth = sales.Where(i => i.InvoiceDate >= today.AddDays(-30)).Sum(i => i.GrandTotal);
+        vm.SalesThisMonth = sales.Where(i => i.InvoiceDate.Month == today.Month).Sum(i => i.GrandTotalTry);
+        vm.SalesLastMonth = sales.Where(i => i.InvoiceDate >= today.AddDays(-30)).Sum(i => i.GrandTotalTry);
         vm.CollectionsThisMonth = collections.Where(c => c.Date.Year == today.Year && c.Date.Month == today.Month).Sum(c => c.Amount);
         vm.CollectionsLastMonth = collections.Where(c => c.Date >= today.AddDays(-30)).Sum(c => c.Amount);
 
@@ -82,7 +83,7 @@ public class HomeController : Controller
         {
             var day = today.AddDays(-d);
             vm.ChartLabelsWeek.Add(day.ToString("dd MMM"));
-            vm.ChartSalesWeek.Add(sales.Where(i => i.InvoiceDate.Date == day).Sum(i => i.GrandTotal));
+            vm.ChartSalesWeek.Add(sales.Where(i => i.InvoiceDate.Date == day).Sum(i => i.GrandTotalTry));
             vm.ChartCollectionsWeek.Add(collections.Where(c => c.Date.Date == day).Sum(c => c.Amount));
         }
         // Son 1 ay: haftalık
@@ -91,7 +92,7 @@ public class HomeController : Controller
             var start = today.AddDays(-(w + 1) * 7 + 1);
             var end = today.AddDays(-w * 7);
             vm.ChartLabelsMonth.Add($"{start:dd MMM} - {end:dd MMM}");
-            vm.ChartSalesMonth.Add(sales.Where(i => i.InvoiceDate.Date >= start && i.InvoiceDate.Date <= end).Sum(i => i.GrandTotal));
+            vm.ChartSalesMonth.Add(sales.Where(i => i.InvoiceDate.Date >= start && i.InvoiceDate.Date <= end).Sum(i => i.GrandTotalTry));
             vm.ChartCollectionsMonth.Add(collections.Where(c => c.Date.Date >= start && c.Date.Date <= end).Sum(c => c.Amount));
         }
         // Son 1 yıl: aylık
@@ -99,7 +100,7 @@ public class HomeController : Controller
         {
             var month = new DateTime(today.Year, today.Month, 1).AddMonths(-mo);
             vm.ChartLabelsYear.Add(month.ToString("MMM yy"));
-            vm.ChartSalesYear.Add(sales.Where(i => i.InvoiceDate.Year == month.Year && i.InvoiceDate.Month == month.Month).Sum(i => i.GrandTotal));
+            vm.ChartSalesYear.Add(sales.Where(i => i.InvoiceDate.Year == month.Year && i.InvoiceDate.Month == month.Month).Sum(i => i.GrandTotalTry));
             vm.ChartCollectionsYear.Add(collections.Where(c => c.Date.Year == month.Year && c.Date.Month == month.Month).Sum(c => c.Amount));
         }
 

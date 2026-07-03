@@ -52,7 +52,7 @@
                         <tr class="@(plan.IsActive ? "" : "text-muted")">
                             <td><a href="@editUrl" class="fw-medium text-decoration-none">@invoice.InvoiceNumber</a></td>
                             <td>@invoice.Firm?.Name</td>
-                            <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
+                            <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") @invoice.CurrencySymbol</td>
                             <td>
                                 @(plan.Frequency switch
                                 {

@@ -48,6 +48,24 @@
     $('#firmSelect').on('change', function () { fillFirm($(this).val()); });
     if (config.selectedFirmId) fillFirm(config.selectedFirmId);
 
+    // ---- Döviz ve kur ----
+    function currencySymbol() {
+        var c = $('#currencySelect').val();
+        return c === 'USD' ? '$' : c === 'EUR' ? '€' : '₺';
+    }
+
+    function refreshCurrency() {
+        var currency = $('#currencySelect').val() || 'TL';
+        var isTl = currency === 'TL';
+        $('#rateRow').toggle(!isTl);
+        if (isTl) $('#exchangeRateInput').val('1');
+        $('#totalsCurrencyHeader').text('Tutar (' + currency + ')');
+        recalc();
+    }
+
+    $('#currencySelect').on('change', refreshCurrency);
+    $('#exchangeRateInput').on('input', function () { recalc(); });
+
     // ---- Vade günü butonları ----
     $('.due-buttons .btn').on('click', function () {
         var days = parseInt($(this).data('days'));
@@ -176,11 +194,23 @@
         var vatTotal = round2(vatSum * ratio);
         var total = round2(subTotal - generalDiscount);
 
-        $('#totalSub').text(fmt(round2(subTotal)) + ' ₺');
-        $('#totalDiscount').text(fmt(round2(lineDiscountTotal + generalDiscount)) + ' ₺');
-        $('#totalNet').text(fmt(total) + ' ₺');
-        $('#totalVat').text(fmt(vatTotal) + ' ₺');
-        $('#totalGrand').text(fmt(round2(total + vatTotal)) + ' ₺');
+        var sym = currencySymbol();
+        var grand = round2(total + vatTotal);
+        $('#totalSub').text(fmt(round2(subTotal)) + ' ' + sym);
+        $('#totalDiscount').text(fmt(round2(lineDiscountTotal + generalDiscount)) + ' ' + sym);
+        $('#totalNet').text(fmt(total) + ' ' + sym);
+        $('#totalVat').text(fmt(vatTotal) + ' ' + sym);
+        $('#totalGrand').text(fmt(grand) + ' ' + sym);
+
+        // Dövizli belgede TL karşılığı satırı
+        var isTl = ($('#currencySelect').val() || 'TL') === 'TL';
+        if (isTl) {
+            $('#tryRow').hide();
+        } else {
+            var rate = parseTr($('#exchangeRateInput').val());
+            $('#totalTry').text(fmt(round2(grand * rate)) + ' ₺');
+            $('#tryRow').show();
+        }
     }
 
     $body.on('input change', 'input, select', recalc);
@@ -190,5 +220,5 @@
     $body.find('tr.line-row').each(function () { initItemSelect($(this)); });
     if ($body.find('tr.line-row').length === 0) addRow();
     reindexRows();
-    recalc();
+    refreshCurrency();
 })();

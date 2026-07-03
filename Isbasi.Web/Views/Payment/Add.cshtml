@@ -32,7 +32,11 @@
                     <tr><td class="text-muted">Fatura No</td><td class="fw-medium text-end">@invoice.InvoiceNumber</td></tr>
                     <tr><td class="text-muted">Firma</td><td class="fw-medium text-end">@invoice.Firm?.Name</td></tr>
                     <tr><td class="text-muted">Fatura Tarihi</td><td class="text-end">@invoice.InvoiceDate.ToString("dd.MM.yyyy")</td></tr>
-                    <tr><td class="text-muted">Genel Toplam</td><td class="fw-medium text-end">@invoice.GrandTotal.ToString("N2") ₺</td></tr>
+                    <tr><td class="text-muted">Genel Toplam</td><td class="fw-medium text-end">@invoice.GrandTotal.ToString("N2") @invoice.CurrencySymbol</td></tr>
+                    @if (invoice.Currency != "TL")
+                    {
+                        <tr><td class="text-muted">TL Karşılığı (kur @invoice.ExchangeRate.ToString("N4"))</td><td class="fw-medium text-end">@invoice.GrandTotalTry.ToString("N2") ₺</td></tr>
+                    }
                     <tr><td class="text-muted">@(isSales ? "Tahsil Edilen" : "Ödenen")</td><td class="text-success fw-medium text-end">@invoice.PaidTotal.ToString("N2") ₺</td></tr>
                     <tr><td class="text-muted">Kalan</td><td class="fw-bold text-end @(invoice.RemainingTotal > 0 ? "text-danger" : "text-success")">@invoice.RemainingTotal.ToString("N2") ₺</td></tr>
                     <tr>

@@ -129,6 +129,11 @@ public class InvoiceController : Controller
         if (model.Lines.Count == 0)
             ModelState.AddModelError("Lines", "En az bir fatura satırı ekleyin.");
 
+        if (model.Currency is not ("USD" or "EUR")) model.Currency = "TL";
+        if (model.Currency == "TL") model.ExchangeRate = 1;
+        else if (model.ExchangeRate <= 0)
+            ModelState.AddModelError("ExchangeRate", "Dövizli belgede kur sıfırdan büyük olmalıdır.");
+
         if (!ModelState.IsValid)
         {
             await FillEditViewBags(model);
@@ -214,8 +219,8 @@ public class InvoiceController : Controller
         // Türkçe Excel: noktalı virgül ayırıcı + UTF-8 BOM
         var sb = new System.Text.StringBuilder();
         sb.AppendLine(isOrderMode
-            ? "Sipariş No;Firma;Sipariş Tipi;Tarih;Teslim Tarihi;Matrah;KDV;Genel Toplam;Durum"
-            : "Fatura No;Firma;Fatura Tipi;Fatura Tarihi;Vade Tarihi;Matrah;KDV;Genel Toplam;Tahsil Edilen;Durum");
+            ? "Sipariş No;Firma;Sipariş Tipi;Tarih;Teslim Tarihi;Matrah;KDV;Genel Toplam;Döviz;Kur;TL Karşılığı;Durum"
+            : "Fatura No;Firma;Fatura Tipi;Fatura Tarihi;Vade Tarihi;Matrah;KDV;Genel Toplam;Döviz;Kur;TL Karşılığı;Tahsil Edilen;Durum");
         foreach (var i in invoices)
         {
             string typeName = i.Type switch
@@ -237,12 +242,14 @@ public class InvoiceController : Controller
                     _ => "Bekliyor"
                 };
                 sb.AppendLine($"{i.InvoiceNumber};{firmName};{typeName};{i.InvoiceDate:dd.MM.yyyy};" +
-                    $"{i.DueDate:dd.MM.yyyy};{i.GrandTotal - i.VatTotal:N2};{i.VatTotal:N2};{i.GrandTotal:N2};{orderStatus}");
+                    $"{i.DueDate:dd.MM.yyyy};{i.GrandTotal - i.VatTotal:N2};{i.VatTotal:N2};{i.GrandTotal:N2};" +
+                    $"{i.Currency};{i.ExchangeRate:0.####};{i.GrandTotalTry:N2};{orderStatus}");
             }
             else
             {
                 sb.AppendLine($"{i.InvoiceNumber};{firmName};{typeName};{i.InvoiceDate:dd.MM.yyyy};" +
                     $"{i.DueDate:dd.MM.yyyy};{i.GrandTotal - i.VatTotal:N2};{i.VatTotal:N2};{i.GrandTotal:N2};" +
+                    $"{i.Currency};{i.ExchangeRate:0.####};{i.GrandTotalTry:N2};" +
                     $"{i.PaidTotal:N2};{(i.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık")}");
             }
         }
@@ -298,6 +305,7 @@ public class InvoiceController : Controller
             FirmId = source.FirmId,
             InvoiceDate = DateTime.Now,
             Currency = source.Currency,
+            ExchangeRate = source.ExchangeRate,
             Category = source.Category,
             Description = source.Description,
             DeliveryAddress = source.DeliveryAddress,
@@ -344,6 +352,7 @@ public class InvoiceController : Controller
             InvoiceDate = DateTime.Now,
             DueDate = order.DueDate,
             Currency = order.Currency,
+            ExchangeRate = order.ExchangeRate,
             Category = order.Category,
             Description = $"{order.InvoiceNumber} numaralı siparişten oluşturuldu. {order.Description}".Trim(),
             GeneralDiscountValue = order.GeneralDiscountValue,

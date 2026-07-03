@@ -128,8 +128,9 @@ public class PaymentController : Controller
         return RedirectToAction(nameof(Add), new { invoiceId });
     }
 
+    // Karşılaştırma TL bazlıdır: dövizli faturada kalan, TL karşılığı üzerinden izlenir
     private static void UpdateInvoiceStatus(Invoice invoice)
-        => invoice.Status = invoice.PaidTotal >= invoice.GrandTotal && invoice.GrandTotal > 0
+        => invoice.Status = invoice.PaidTotal >= invoice.GrandTotalTry && invoice.GrandTotalTry > 0
             ? InvoiceStatus.Paid
             : InvoiceStatus.Open;
 

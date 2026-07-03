@@ -47,9 +47,9 @@ public class ReportsController : Controller
             {
                 Month = culture.DateTimeFormat.GetMonthName(month),
                 InvoiceCount = monthInvoices.Count,
-                Net = monthInvoices.Sum(i => i.GrandTotal - i.VatTotal),
-                Vat = monthInvoices.Sum(i => i.VatTotal),
-                Gross = monthInvoices.Sum(i => i.GrandTotal)
+                Net = monthInvoices.Sum(i => i.GrandTotalTry - i.VatTotalTry),
+                Vat = monthInvoices.Sum(i => i.VatTotalTry),
+                Gross = monthInvoices.Sum(i => i.GrandTotalTry)
             });
         }
 
@@ -59,7 +59,7 @@ public class ReportsController : Controller
             {
                 FirmName = g.Key,
                 InvoiceCount = g.Count(),
-                Gross = g.Sum(i => i.GrandTotal)
+                Gross = g.Sum(i => i.GrandTotalTry)
             })
             .OrderByDescending(f => f.Gross)
             .ToList();
@@ -74,7 +74,7 @@ public class ReportsController : Controller
         var invoices = await _db.Invoices.AsNoTracking()
             .Where(i => i.InvoiceDate.Year == reportYear
                 && i.Type != InvoiceType.SalesOrder && i.Type != InvoiceType.PurchaseOrder)
-            .Select(i => new { i.InvoiceDate, i.Type, i.GrandTotal })
+            .Select(i => new { i.InvoiceDate, i.Type, i.GrandTotal, i.ExchangeRate })
             .ToListAsync();
 
         var vm = new SalesPurchaseViewModel { Year = reportYear };
@@ -88,13 +88,13 @@ public class ReportsController : Controller
                 Month = culture.DateTimeFormat.GetMonthName(month),
                 Sales = monthInvoices
                     .Where(i => i.Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail)
-                    .Sum(i => i.GrandTotal),
+                    .Sum(i => Math.Round(i.GrandTotal * i.ExchangeRate, 2)),
                 Purchases = monthInvoices
                     .Where(i => i.Type == InvoiceType.Purchase)
-                    .Sum(i => i.GrandTotal),
+                    .Sum(i => Math.Round(i.GrandTotal * i.ExchangeRate, 2)),
                 Expenses = monthInvoices
                     .Where(i => i.Type == InvoiceType.Expense)
-                    .Sum(i => i.GrandTotal)
+                    .Sum(i => Math.Round(i.GrandTotal * i.ExchangeRate, 2))
             });
         }
 
@@ -131,7 +131,7 @@ public class ReportsController : Controller
                     Status = label,
                     BadgeClass = badge,
                     Count = matching.Count,
-                    Total = matching.Sum(o => o.GrandTotal)
+                    Total = matching.Sum(o => o.GrandTotalTry)
                 });
             }
             vm.Groups.Add(group);
@@ -144,10 +144,14 @@ public class ReportsController : Controller
     public async Task<IActionResult> VatReport(int? year)
     {
         int reportYear = year ?? DateTime.Today.Year;
-        var invoices = await _db.Invoices.AsNoTracking()
+        var invoiceRows = await _db.Invoices.AsNoTracking()
             .Where(i => i.InvoiceDate.Year == reportYear)
-            .Select(i => new { i.InvoiceDate, i.Type, i.VatTotal })
+            .Select(i => new { i.InvoiceDate, i.Type, i.VatTotal, i.ExchangeRate })
             .ToListAsync();
+        // Çarpım bellekte: SQLite decimal aritmetiğini SQL'e çeviremez
+        var invoices = invoiceRows
+            .Select(i => new { i.InvoiceDate, i.Type, VatTotal = Math.Round(i.VatTotal * i.ExchangeRate, 2) })
+            .ToList();
         // SMM KDV'leri de beyana girer: verilen makbuz hesaplanan, alınan indirilecek
         var receipts = await _db.FreelanceReceipts.AsNoTracking()
             .Where(r => r.Date.Year == reportYear)

@@ -77,7 +77,7 @@
                             <td>@(order.Type == InvoiceType.SalesOrder ? "Satış Siparişi" : "Alış Siparişi")</td>
                             <td>@order.InvoiceDate.ToString("dd.MM.yyyy")</td>
                             <td>@(order.DueDate?.ToString("dd.MM.yyyy") ?? "-")</td>
-                            <td class="text-end fw-medium">@order.GrandTotal.ToString("N2") ₺</td>
+                            <td class="text-end fw-medium">@order.GrandTotal.ToString("N2") @order.CurrencySymbol</td>
                             <td>
                                 <span class="status-badge @(order.OrderState switch { OrderStatus.Invoiced => "status-paid", OrderStatus.Cancelled => "status-cancelled", _ => "status-open" })">
                                     @(order.OrderState switch { OrderStatus.Invoiced => "Faturalandı", OrderStatus.Cancelled => "İptal", _ => "Bekliyor" })

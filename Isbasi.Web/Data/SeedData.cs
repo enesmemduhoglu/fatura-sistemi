@@ -110,6 +110,14 @@ public static class SeedData
         invoices.Add(MakeInvoice(InvoiceType.SalesRetail, firms[2], new DateTime(year, 6, 8),
             Line(products[1], 3)));
 
+        // Örnek dövizli fatura: 1.000 $ × 41,25 kur (raporlarda TL karşılığıyla toplanır)
+        var usdInvoice = MakeInvoice(InvoiceType.SalesWholesale, firms[0], new DateTime(year, 6, 20),
+            new InvoiceLine { ItemName = "Yazılım Lisansı (yıllık)", Quantity = 1, Unit = "Adet", UnitPrice = 1000, VatRate = 20 });
+        usdInvoice.Currency = "USD";
+        usdInvoice.ExchangeRate = 41.25m;
+        usdInvoice.Status = InvoiceStatus.Open;
+        invoices.Add(usdInvoice);
+
         invoices.Add(MakeInvoice(InvoiceType.Purchase, firms[3], new DateTime(year, 1, 8),
             Line(products[0], 50, sales: false), Line(products[1], 40, sales: false)));
         invoices.Add(MakeInvoice(InvoiceType.Purchase, firms[3], new DateTime(year, 3, 12),
@@ -166,7 +174,7 @@ public static class SeedData
             {
                 InvoiceId = invoice.Id,
                 Date = invoice.InvoiceDate.AddDays(15),
-                Amount = invoice.GrandTotal,
+                Amount = invoice.GrandTotalTry,
                 AccountType = PaymentAccountType.Bank,
                 BankAccountId = bank.Id,
                 Description = "Açılış verisi"

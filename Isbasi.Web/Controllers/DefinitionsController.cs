@@ -31,13 +31,17 @@ public class DefinitionsController : Controller
         var openInvoices = await _db.Invoices.AsNoTracking()
             .Where(i => i.Status == InvoiceStatus.Open
                 && i.Type != InvoiceType.SalesOrder && i.Type != InvoiceType.PurchaseOrder)
-            .Select(i => new { i.FirmId, i.Type, i.GrandTotal })
+            .Select(i => new { i.FirmId, i.Type, i.GrandTotal, i.ExchangeRate })
             .ToListAsync();
         var balances = openInvoices
             .GroupBy(i => i.FirmId)
             .ToDictionary(
                 g => g.Key,
-                g => g.Sum(i => i.Type is InvoiceType.Purchase or InvoiceType.Expense ? -i.GrandTotal : i.GrandTotal));
+                g => g.Sum(i =>
+                {
+                    var tl = Math.Round(i.GrandTotal * i.ExchangeRate, 2);
+                    return i.Type is InvoiceType.Purchase or InvoiceType.Expense ? -tl : tl;
+                }));
         ViewBag.Balances = balances;
         ViewBag.Query = q;
         ViewBag.Role = role;
@@ -112,6 +116,10 @@ public class DefinitionsController : Controller
         foreach (var i in invoices)
         {
             bool debit = i.IsSales;
+            // Ekstre TL bazlıdır; dövizli belgede orijinal tutar açıklamada gösterilir
+            string? description = i.Currency == "TL"
+                ? i.Description
+                : $"{i.GrandTotal:N2} {i.CurrencySymbol} × {i.ExchangeRate:N4} {i.Description}".TrimEnd();
             entries.Add(new StatementRow
             {
                 Date = i.InvoiceDate,
@@ -123,9 +131,9 @@ public class DefinitionsController : Controller
                     InvoiceType.Purchase => "Alış Faturası",
                     _ => "Gider Faturası"
                 },
-                Description = i.Description,
-                Debit = debit ? i.GrandTotal : 0,
-                Credit = debit ? 0 : i.GrandTotal,
+                Description = description,
+                Debit = debit ? i.GrandTotalTry : 0,
+                Credit = debit ? 0 : i.GrandTotalTry,
                 Link = i.Type switch
                 {
                     InvoiceType.Purchase => $"/invoice/purchase/edit?id={i.Id}",

@@ -119,6 +119,7 @@
                 @if (!string.IsNullOrWhiteSpace(Model.DeliveryNoteNumber)) { <div><span>İrsaliye No:</span> @Model.DeliveryNoteNumber</div> }
                 @if (Model.DeliveryNoteDate.HasValue) { <div><span>İrsaliye Tarihi:</span> @Model.DeliveryNoteDate.Value.ToString("dd.MM.yyyy")</div> }
                 <div><span>Döviz:</span> @Model.Currency</div>
+                @if (Model.Currency != "TL") { <div><span>Kur:</span> @Model.ExchangeRate.ToString("N4") ₺</div> }
             </div>
         </div>
 
@@ -154,13 +155,17 @@
         </table>
 
         <div class="totals">
-            <div class="row"><span>Ara Toplam</span><span>@Model.SubTotal.ToString("N2") ₺</span></div>
+            <div class="row"><span>Ara Toplam</span><span>@Model.SubTotal.ToString("N2") @Model.CurrencySymbol</span></div>
             @if (Model.DiscountTotal > 0)
             {
-                <div class="row"><span>Toplam İndirim</span><span>-@Model.DiscountTotal.ToString("N2") ₺</span></div>
+                <div class="row"><span>Toplam İndirim</span><span>-@Model.DiscountTotal.ToString("N2") @Model.CurrencySymbol</span></div>
             }
-            <div class="row"><span>Toplam KDV</span><span>@Model.VatTotal.ToString("N2") ₺</span></div>
-            <div class="row grand"><span>Genel Toplam</span><span>@Model.GrandTotal.ToString("N2") ₺</span></div>
+            <div class="row"><span>Toplam KDV</span><span>@Model.VatTotal.ToString("N2") @Model.CurrencySymbol</span></div>
+            <div class="row grand"><span>Genel Toplam</span><span>@Model.GrandTotal.ToString("N2") @Model.CurrencySymbol</span></div>
+            @if (Model.Currency != "TL")
+            {
+                <div class="row"><span>TL Karşılığı (kur @Model.ExchangeRate.ToString("N4"))</span><span>@Model.GrandTotalTry.ToString("N2") ₺</span></div>
+            }
         </div>
 
         @if (!string.IsNullOrEmpty(Model.Description))

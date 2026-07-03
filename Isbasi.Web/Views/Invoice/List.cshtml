@@ -141,7 +141,13 @@
                                 @(invoice.DueDate?.ToString("dd.MM.yyyy") ?? "-")
                                 @if (overdue) { <i class="fas fa-exclamation-circle" title="Vadesi geçti"></i> }
                             </td>
-                            <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
+                            <td class="text-end fw-medium">
+                                @invoice.GrandTotal.ToString("N2") @invoice.CurrencySymbol
+                                @if (invoice.Currency != "TL")
+                                {
+                                    <div class="small text-muted fw-normal">@invoice.GrandTotalTry.ToString("N2") ₺</div>
+                                }
+                            </td>
                             @if (!Model.IsOrderMode)
                             {
                                 <td class="text-end @(invoice.PaidTotal > 0 ? "text-success fw-medium" : "text-muted")">@invoice.PaidTotal.ToString("N2") ₺</td>
@@ -201,6 +207,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="text-muted small">Toplam @Model.Invoices.Count fatura — Genel toplam: <strong>@Model.Invoices.Sum(i => i.GrandTotal).ToString("N2") ₺</strong></div>
+        <div class="text-muted small">Toplam @Model.Invoices.Count fatura — Genel toplam (TL karşılığı): <strong>@Model.Invoices.Sum(i => i.GrandTotalTry).ToString("N2") ₺</strong></div>
     }
 </div>

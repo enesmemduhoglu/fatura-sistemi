@@ -43,7 +43,6 @@
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
     <input type="hidden" asp-for="Type" />
-    <input type="hidden" asp-for="Currency" />
     <input type="hidden" asp-for="OrderState" />
     <input type="hidden" asp-for="ConvertedInvoiceId" />
 
@@ -146,7 +145,18 @@
                 <div class="row mb-3 align-items-center">
                     <label class="col-4 form-label mb-0">Döviz</label>
                     <div class="col-8">
-                        <select class="form-select" disabled><option>TL</option></select>
+                        <select asp-for="Currency" class="form-select" id="currencySelect">
+                            <option value="TL">TL — Türk Lirası</option>
+                            <option value="USD">USD — Amerikan Doları</option>
+                            <option value="EUR">EUR — Euro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3 align-items-center" id="rateRow" style="display:none">
+                    <label class="col-4 form-label mb-0">Kur (1 birim = ? TL)</label>
+                    <div class="col-8">
+                        <input asp-for="ExchangeRate" class="form-control" id="exchangeRateInput" />
+                        <span asp-validation-for="ExchangeRate" class="text-danger small"></span>
                     </div>
                 </div>
                 @if (Model.IsOrder)
@@ -261,7 +271,7 @@
             <!-- Toplamlar -->
             <div class="col-lg-6">
                 <div class="totals-panel">
-                    <div class="row-line header"><span></span><span>Tutar (TL)</span></div>
+                    <div class="row-line header"><span></span><span id="totalsCurrencyHeader">Tutar (TL)</span></div>
                     <div class="row-line"><span>Ara Toplam</span><span id="totalSub">0,00 ₺</span></div>
                     <div class="row-line">
                         <span>İndirim</span>
@@ -280,6 +290,7 @@
                     <div class="row-line"><span>Toplam</span><span id="totalNet">0,00 ₺</span></div>
                     <div class="row-line"><span>Toplam KDV Tutarı</span><span id="totalVat">0,00 ₺</span></div>
                     <div class="row-line grand"><span>Genel Toplam</span><span id="totalGrand">0,00 ₺</span></div>
+                    <div class="row-line" id="tryRow" style="display:none"><span>TL Karşılığı</span><span id="totalTry">0,00 ₺</span></div>
                 </div>
             </div>
         </div>

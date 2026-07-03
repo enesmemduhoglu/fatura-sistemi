@@ -100,7 +100,7 @@ public class ManageController : Controller
                 fileName = "hizmetler";
                 break;
             case "invoices":
-                sb.AppendLine("Belge No;Firma;Tip;Tarih;Vade;Matrah;KDV;Genel Toplam;Durum");
+                sb.AppendLine("Belge No;Firma;Tip;Tarih;Vade;Matrah;KDV;Genel Toplam;Döviz;Kur;TL Karşılığı;Durum");
                 foreach (var i in await _db.Invoices.AsNoTracking().Include(i => i.Firm).OrderBy(i => i.InvoiceDate).ToListAsync())
                 {
                     string type = i.Type switch
@@ -115,7 +115,7 @@ public class ManageController : Controller
                     string status = i.IsOrder
                         ? i.OrderState switch { OrderStatus.Invoiced => "Faturalandı", OrderStatus.Cancelled => "İptal", _ => "Bekliyor" }
                         : (i.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık");
-                    sb.AppendLine($"{Csv(i.InvoiceNumber)};{Csv(i.Firm?.Name)};{type};{i.InvoiceDate:dd.MM.yyyy};{i.DueDate:dd.MM.yyyy};{i.GrandTotal - i.VatTotal:N2};{i.VatTotal:N2};{i.GrandTotal:N2};{status}");
+                    sb.AppendLine($"{Csv(i.InvoiceNumber)};{Csv(i.Firm?.Name)};{type};{i.InvoiceDate:dd.MM.yyyy};{i.DueDate:dd.MM.yyyy};{i.GrandTotal - i.VatTotal:N2};{i.VatTotal:N2};{i.GrandTotal:N2};{i.Currency};{i.ExchangeRate:0.####};{i.GrandTotalTry:N2};{status}");
                 }
                 fileName = "faturalar";
                 break;

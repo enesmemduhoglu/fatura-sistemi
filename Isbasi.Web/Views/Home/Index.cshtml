@@ -151,7 +151,7 @@
                                     <td><a href="/invoice/sales/edit?id=@invoice.Id" class="text-decoration-none fw-medium">@invoice.InvoiceNumber</a></td>
                                     <td class="small">@invoice.Firm?.Name</td>
                                     <td class="small text-danger">@days gün gecikti</td>
-                                    <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
+                                    <td class="text-end fw-medium">@invoice.GrandTotalTry.ToString("N2") ₺</td>
                                 </tr>
                             }
                         </tbody>
@@ -185,7 +185,7 @@
                                     <td><a href="@editUrl" class="text-decoration-none fw-medium">@invoice.InvoiceNumber</a></td>
                                     <td class="small">@invoice.Firm?.Name</td>
                                     <td class="small text-danger">@days gün gecikti</td>
-                                    <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
+                                    <td class="text-end fw-medium">@invoice.GrandTotalTry.ToString("N2") ₺</td>
                                 </tr>
                             }
                         </tbody>

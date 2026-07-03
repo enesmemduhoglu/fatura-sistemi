@@ -41,6 +41,7 @@ public static class RecurringGenerator
                     FirmId = source.FirmId,
                     InvoiceDate = plan.NextRunDate,
                     Currency = source.Currency,
+                    ExchangeRate = source.ExchangeRate,
                     Category = source.Category,
                     Description = $"{source.InvoiceNumber} numaralı belgeden tekrarlayan fatura. {source.Description}".Trim(),
                     DeliveryAddress = source.DeliveryAddress,

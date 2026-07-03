@@ -52,6 +52,11 @@ public class Invoice
     [Display(Name = "Döviz")]
     public string Currency { get; set; } = "TL";
 
+    // 1 birim döviz = ? TL; TL belgelerde her zaman 1. Tutarlar belge dövizindedir,
+    // raporlar ve ödeme takibi TL karşılığı (…Try) üzerinden yürür.
+    [Display(Name = "Kur")]
+    public decimal ExchangeRate { get; set; } = 1;
+
     [Display(Name = "Kategori")]
     public string? Category { get; set; }
 
@@ -97,6 +102,11 @@ public class Invoice
     public bool IsSales => Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail;
     public bool IsOrder => Type is InvoiceType.SalesOrder or InvoiceType.PurchaseOrder;
 
+    public decimal GrandTotalTry => Math.Round(GrandTotal * ExchangeRate, 2);
+    public decimal VatTotalTry => Math.Round(VatTotal * ExchangeRate, 2);
+    public string CurrencySymbol => Currency switch { "USD" => "$", "EUR" => "€", _ => "₺" };
+
+    // Tahsilat/ödemeler her zaman TL girilir; kalan da TL karşılığı üzerinden izlenir
     public decimal PaidTotal => Payments.Sum(p => p.Amount);
-    public decimal RemainingTotal => GrandTotal - PaidTotal;
+    public decimal RemainingTotal => GrandTotalTry - PaidTotal;
 }
