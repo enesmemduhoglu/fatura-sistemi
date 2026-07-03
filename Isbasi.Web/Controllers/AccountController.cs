@@ -60,4 +60,31 @@ public class AccountController : Controller
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction(nameof(Login));
     }
+
+    [Authorize]
+    [HttpGet("changepassword")]
+    public IActionResult ChangePassword() => View();
+
+    [Authorize]
+    [HttpPost("changepassword")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string newPasswordConfirm)
+    {
+        int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var user = await _db.Users.FirstAsync(u => u.Id == userId);
+
+        if (!PasswordHasher.Verify(currentPassword ?? "", user.PasswordHash))
+            ViewBag.Error = "Mevcut parolanız hatalı.";
+        else if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+            ViewBag.Error = "Yeni parola en az 6 karakter olmalıdır.";
+        else if (newPassword != newPasswordConfirm)
+            ViewBag.Error = "Yeni parolalar birbiriyle uyuşmuyor.";
+
+        if (ViewBag.Error != null) return View();
+
+        user.PasswordHash = PasswordHasher.Hash(newPassword!);
+        await _db.SaveChangesAsync();
+        TempData["Success"] = "Parolanız değiştirildi.";
+        return Redirect("/");
+    }
 }

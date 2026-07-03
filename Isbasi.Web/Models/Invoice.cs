@@ -7,7 +7,16 @@ public enum InvoiceType
     [Display(Name = "Toptan Satış Faturası (KDV Hariç)")] SalesWholesale = 0,
     [Display(Name = "Perakende Satış Faturası (KDV Dahil)")] SalesRetail = 1,
     [Display(Name = "Alış Faturası")] Purchase = 2,
-    [Display(Name = "Gider Faturası")] Expense = 3
+    [Display(Name = "Gider Faturası")] Expense = 3,
+    [Display(Name = "Satış Siparişi")] SalesOrder = 4,
+    [Display(Name = "Alış Siparişi")] PurchaseOrder = 5
+}
+
+public enum OrderStatus
+{
+    [Display(Name = "Bekliyor")] Waiting = 0,
+    [Display(Name = "Faturalandı")] Invoiced = 1,
+    [Display(Name = "İptal")] Cancelled = 2
 }
 
 public enum InvoiceStatus
@@ -71,7 +80,12 @@ public class Invoice
     public List<InvoiceLine> Lines { get; set; } = new();
     public List<Payment> Payments { get; set; } = new();
 
+    // Sipariş belgeleri için: durum ve dönüştürüldüğü fatura
+    public OrderStatus? OrderState { get; set; }
+    public int? ConvertedInvoiceId { get; set; }
+
     public bool IsSales => Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail;
+    public bool IsOrder => Type is InvoiceType.SalesOrder or InvoiceType.PurchaseOrder;
 
     public decimal PaidTotal => Payments.Sum(p => p.Amount);
     public decimal RemainingTotal => GrandTotal - PaidTotal;

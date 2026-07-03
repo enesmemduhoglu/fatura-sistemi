@@ -21,6 +21,11 @@ public class PaymentController : Controller
             .Include(i => i.Payments).ThenInclude(p => p.BankAccount)
             .FirstOrDefaultAsync(i => i.Id == invoiceId);
         if (invoice == null) return NotFound();
+        if (invoice.IsOrder)
+        {
+            TempData["Error"] = "Siparişlere tahsilat/ödeme girilemez; önce faturaya dönüştürün.";
+            return Redirect(invoice.Type == InvoiceType.PurchaseOrder ? "/invoice/purchaseorders" : "/invoice/orders");
+        }
 
         await FillViewBags(invoice);
         var payment = new Payment

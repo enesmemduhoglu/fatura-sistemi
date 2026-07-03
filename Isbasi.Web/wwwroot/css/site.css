@@ -238,6 +238,7 @@ body {
 }
 .status-open { background: #fff4de; color: #ffa800; }
 .status-paid { background: #e8fff3; color: #34bfa3; }
+.status-cancelled { background: #ffe2e5; color: #f64e60; }
 
 /* ---------- Formlar ---------- */
 .form-label { font-weight: 500; font-size: 12.5px; color: #575962; }

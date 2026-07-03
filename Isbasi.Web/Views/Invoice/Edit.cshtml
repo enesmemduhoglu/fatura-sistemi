@@ -8,6 +8,8 @@
         InvoiceType.SalesWholesale => "Toptan Satış Faturası",
         InvoiceType.SalesRetail => "Perakende Satış Faturası",
         InvoiceType.Expense => "Gider Faturası",
+        InvoiceType.SalesOrder => "Satış Siparişi",
+        InvoiceType.PurchaseOrder => "Alış Siparişi",
         _ => "Alış Faturası"
     };
     string vatNote = isSales ? (vatIncluded ? "(KDV Dahil)" : "(KDV Hariç)") : "";
@@ -16,12 +18,16 @@
     {
         InvoiceType.Purchase => "/invoice/purchase",
         InvoiceType.Expense => "/invoice/purchaseservices",
+        InvoiceType.SalesOrder => "/invoice/orders",
+        InvoiceType.PurchaseOrder => "/invoice/purchaseorders",
         _ => "/invoice/sales"
     };
     string listTitle = Model.Type switch
     {
         InvoiceType.Purchase => "Alış Faturaları",
         InvoiceType.Expense => "Giderler",
+        InvoiceType.SalesOrder => "Siparişler",
+        InvoiceType.PurchaseOrder => "Alış Siparişleri",
         _ => "Satış Faturaları"
     };
     var firms = (List<Firm>)ViewBag.Firms;
@@ -38,6 +44,8 @@
     <input type="hidden" asp-for="Id" />
     <input type="hidden" asp-for="Type" />
     <input type="hidden" asp-for="Currency" />
+    <input type="hidden" asp-for="OrderState" />
+    <input type="hidden" asp-for="ConvertedInvoiceId" />
 
     <div class="page-header">
         <h1 class="page-title">
@@ -134,15 +142,29 @@
                         <select class="form-select" disabled><option>TL</option></select>
                     </div>
                 </div>
-                <div class="row mb-3 align-items-center">
-                    <label class="col-4 form-label mb-0">Kayıt Durumu</label>
-                    <div class="col-8">
-                        <select asp-for="Status" class="form-select">
-                            <option value="Open">Açık</option>
-                            <option value="Paid">Ödendi</option>
-                        </select>
+                @if (Model.IsOrder)
+                {
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-4 form-label mb-0">Sipariş Durumu</label>
+                        <div class="col-8">
+                            <span class="status-badge @(Model.OrderState switch { OrderStatus.Invoiced => "status-paid", OrderStatus.Cancelled => "status-cancelled", _ => "status-open" })">
+                                @(Model.OrderState switch { OrderStatus.Invoiced => "Faturalandı", OrderStatus.Cancelled => "İptal", _ => "Bekliyor" })
+                            </span>
+                        </div>
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-4 form-label mb-0">Kayıt Durumu</label>
+                        <div class="col-8">
+                            <select asp-for="Status" class="form-select">
+                                <option value="Open">Açık</option>
+                                <option value="Paid">Ödendi</option>
+                            </select>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
 

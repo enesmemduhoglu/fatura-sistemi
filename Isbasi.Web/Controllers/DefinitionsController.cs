@@ -28,7 +28,8 @@ public class DefinitionsController : Controller
         // Firma bakiyesi: açık satış faturaları alacak, açık alış faturaları borç oluşturur.
         // SQLite decimal üzerinde SQL Sum yapamadığı için bellekte toplanır.
         var openInvoices = await _db.Invoices.AsNoTracking()
-            .Where(i => i.Status == InvoiceStatus.Open)
+            .Where(i => i.Status == InvoiceStatus.Open
+                && i.Type != InvoiceType.SalesOrder && i.Type != InvoiceType.PurchaseOrder)
             .Select(i => new { i.FirmId, i.Type, i.GrandTotal })
             .ToListAsync();
         var balances = openInvoices

@@ -21,8 +21,17 @@
         <div class="col-md-2">
             <select name="status" class="form-select" onchange="this.form.submit()">
                 <option value="" selected="@(string.IsNullOrEmpty(Model.Status))">Hepsi</option>
-                <option value="Open" selected="@(Model.Status == "Open")">Açık</option>
-                <option value="Paid" selected="@(Model.Status == "Paid")">Ödendi</option>
+                @if (Model.IsOrderMode)
+                {
+                    <option value="Waiting" selected="@(Model.Status == "Waiting")">Bekliyor</option>
+                    <option value="Invoiced" selected="@(Model.Status == "Invoiced")">Faturalandı</option>
+                    <option value="Cancelled" selected="@(Model.Status == "Cancelled")">İptal</option>
+                }
+                else
+                {
+                    <option value="Open" selected="@(Model.Status == "Open")">Açık</option>
+                    <option value="Paid" selected="@(Model.Status == "Paid")">Ödendi</option>
+                }
             </select>
         </div>
         <div class="col-md-4">
@@ -49,6 +58,14 @@
             {
                 <a href="/invoice/purchaseservices/edit" class="btn btn-isbasi">Yeni Gider Faturası</a>
             }
+            else if (Model.Mode == "Orders")
+            {
+                <a href="/invoice/orders/edit" class="btn btn-isbasi">Yeni Sipariş</a>
+            }
+            else if (Model.Mode == "PurchaseOrders")
+            {
+                <a href="/invoice/purchaseorders/edit" class="btn btn-isbasi">Yeni Alış Siparişi</a>
+            }
             else
             {
                 <a href="/invoice/purchase/edit" class="btn btn-isbasi">Yeni Alış Faturası</a>
@@ -74,9 +91,9 @@
     @if (Model.Invoices.Count == 0)
     {
         <div class="empty-state">
-            <i class="fas fa-file-invoice"></i>
-            <div class="title">Henüz fatura bulunmuyor</div>
-            <div>@(Model.IsSales ? "\"Yeni Satış\" butonu ile ilk faturanızı oluşturun." : Model.IsExpense ? "\"Yeni Gider Faturası\" butonu ile ilk giderinizi oluşturun." : "\"Yeni Alış Faturası\" butonu ile ilk faturanızı oluşturun.")</div>
+            <i class="fas @(Model.IsOrderMode ? "fa-shopping-basket" : "fa-file-invoice")"></i>
+            <div class="title">@(Model.IsOrderMode ? "Henüz sipariş bulunmuyor" : "Henüz fatura bulunmuyor")</div>
+            <div>@(Model.IsSales ? "\"Yeni Satış\" butonu ile ilk faturanızı oluşturun." : Model.IsExpense ? "\"Yeni Gider Faturası\" butonu ile ilk giderinizi oluşturun." : Model.IsOrderMode ? "Yeni sipariş butonu ile ilk siparişinizi oluşturun." : "\"Yeni Alış Faturası\" butonu ile ilk faturanızı oluşturun.")</div>
         </div>
     }
     else
@@ -85,13 +102,16 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Fatura No</th>
-                        <th>@(Model.IsSales ? "Müşteri" : "Tedarikçi")</th>
-                        <th>Fatura Tipi</th>
-                        <th>Fatura Tarihi</th>
-                        <th>Vade Tarihi</th>
+                        <th>@(Model.IsOrderMode ? "Sipariş No" : "Fatura No")</th>
+                        <th>@(Model.IsSales || Model.Mode == "Orders" ? "Müşteri" : "Tedarikçi")</th>
+                        <th>@(Model.IsOrderMode ? "Sipariş Tipi" : "Fatura Tipi")</th>
+                        <th>Tarih</th>
+                        <th>@(Model.IsOrderMode ? "Teslim Tarihi" : "Vade Tarihi")</th>
                         <th class="text-end">Genel Toplam</th>
-                        <th class="text-end">@(Model.IsSales ? "Tahsil Edilen" : "Ödenen")</th>
+                        @if (!Model.IsOrderMode)
+                        {
+                            <th class="text-end">@(Model.IsSales ? "Tahsil Edilen" : "Ödenen")</th>
+                        }
                         <th>Durum</th>
                         <th class="text-end">İşlemler</th>
                     </tr>
@@ -109,24 +129,62 @@
                                     InvoiceType.SalesWholesale => "Toptan (KDV Hariç)",
                                     InvoiceType.SalesRetail => "Perakende (KDV Dahil)",
                                     InvoiceType.Expense => "Gider",
+                                    InvoiceType.SalesOrder => "Satış Siparişi",
+                                    InvoiceType.PurchaseOrder => "Alış Siparişi",
                                     _ => "Alış"
                                 })
                             </td>
                             <td>@invoice.InvoiceDate.ToString("dd.MM.yyyy")</td>
                             <td>@(invoice.DueDate?.ToString("dd.MM.yyyy") ?? "-")</td>
                             <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
-                            <td class="text-end @(invoice.PaidTotal > 0 ? "text-success fw-medium" : "text-muted")">@invoice.PaidTotal.ToString("N2") ₺</td>
+                            @if (!Model.IsOrderMode)
+                            {
+                                <td class="text-end @(invoice.PaidTotal > 0 ? "text-success fw-medium" : "text-muted")">@invoice.PaidTotal.ToString("N2") ₺</td>
+                            }
                             <td>
-                                <span class="status-badge @(invoice.Status == InvoiceStatus.Paid ? "status-paid" : "status-open")">
-                                    @(invoice.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık")
-                                </span>
+                                @if (Model.IsOrderMode)
+                                {
+                                    <span class="status-badge @(invoice.OrderState switch { OrderStatus.Invoiced => "status-paid", OrderStatus.Cancelled => "status-cancelled", _ => "status-open" })">
+                                        @(invoice.OrderState switch { OrderStatus.Invoiced => "Faturalandı", OrderStatus.Cancelled => "İptal", _ => "Bekliyor" })
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge @(invoice.Status == InvoiceStatus.Paid ? "status-paid" : "status-open")">
+                                        @(invoice.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık")
+                                    </span>
+                                }
                             </td>
                             <td class="text-end">
-                                <a href="/payment/add?invoiceId=@invoice.Id" class="btn btn-sm btn-outline-success" title="@(Model.IsSales ? "Tahsilat Ekle" : "Ödeme Ekle")"><i class="fas fa-money-bill"></i></a>
+                                @if (Model.IsOrderMode)
+                                {
+                                    if (invoice.OrderState == OrderStatus.Waiting)
+                                    {
+                                        <form method="post" action="/invoice/convert/@invoice.Id" class="d-inline"
+                                              onsubmit="return confirm('@invoice.InvoiceNumber numaralı sipariş faturaya dönüştürülsün mü?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Faturaya Dönüştür"><i class="fas fa-file-export"></i></button>
+                                        </form>
+                                    }
+                                    if (invoice.OrderState != OrderStatus.Invoiced)
+                                    {
+                                        <form method="post" action="/invoice/cancelorder/@invoice.Id" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-warning"
+                                                    title="@(invoice.OrderState == OrderStatus.Cancelled ? "Tekrar Beklemeye Al" : "İptal Et")">
+                                                <i class="fas @(invoice.OrderState == OrderStatus.Cancelled ? "fa-undo" : "fa-ban")"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                }
+                                else
+                                {
+                                    <a href="/payment/add?invoiceId=@invoice.Id" class="btn btn-sm btn-outline-success" title="@(Model.IsSales ? "Tahsilat Ekle" : "Ödeme Ekle")"><i class="fas fa-money-bill"></i></a>
+                                }
                                 <a href="/invoice/print/@invoice.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Yazdır"><i class="fas fa-print"></i></a>
                                 <a href="@editUrl" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
                                 <form method="post" action="/invoice/delete/@invoice.Id" class="d-inline"
-                                      onsubmit="return confirm('@invoice.InvoiceNumber numaralı fatura silinsin mi?');">
+                                      onsubmit="return confirm('@invoice.InvoiceNumber numaralı kayıt silinsin mi?');">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash"></i></button>
                                 </form>

@@ -15,8 +15,10 @@ public class HomeController : Controller
     public async Task<IActionResult> Index()
     {
         var year = DateTime.Today.Year;
+        // Siparişler mali kayıt değildir; nakit akışı ve bilanço dışında tutulur
         var invoices = await _db.Invoices.AsNoTracking()
-            .Where(i => i.InvoiceDate.Year == year)
+            .Where(i => i.InvoiceDate.Year == year
+                && i.Type != InvoiceType.SalesOrder && i.Type != InvoiceType.PurchaseOrder)
             .ToListAsync();
 
         var vm = new DashboardViewModel

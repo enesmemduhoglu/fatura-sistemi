@@ -25,6 +25,14 @@ public class InvoiceController : Controller
     public Task<IActionResult> Expenses(string? status, string? q, DateTime? start, DateTime? end)
         => List("Expense", status, q, start, end);
 
+    [HttpGet("orders")]
+    public Task<IActionResult> Orders(string? status, string? q, DateTime? start, DateTime? end)
+        => List("Orders", status, q, start, end);
+
+    [HttpGet("purchaseorders")]
+    public Task<IActionResult> PurchaseOrders(string? status, string? q, DateTime? start, DateTime? end)
+        => List("PurchaseOrders", status, q, start, end);
+
     private async Task<IActionResult> List(string mode, string? status, string? q, DateTime? start, DateTime? end)
     {
         var query = _db.Invoices.AsNoTracking().Include(i => i.Firm).Include(i => i.Payments).AsQueryable();
@@ -32,11 +40,17 @@ public class InvoiceController : Controller
         {
             "Sales" => query.Where(i => i.Type == InvoiceType.SalesWholesale || i.Type == InvoiceType.SalesRetail),
             "Purchase" => query.Where(i => i.Type == InvoiceType.Purchase),
+            "Orders" => query.Where(i => i.Type == InvoiceType.SalesOrder),
+            "PurchaseOrders" => query.Where(i => i.Type == InvoiceType.PurchaseOrder),
             _ => query.Where(i => i.Type == InvoiceType.Expense)
         };
 
+        // Siparişlerde durum filtresi sipariş durumudur, faturalarda ödeme durumu
         if (status == "Open") query = query.Where(i => i.Status == InvoiceStatus.Open);
         else if (status == "Paid") query = query.Where(i => i.Status == InvoiceStatus.Paid);
+        else if (status == "Waiting") query = query.Where(i => i.OrderState == OrderStatus.Waiting);
+        else if (status == "Invoiced") query = query.Where(i => i.OrderState == OrderStatus.Invoiced);
+        else if (status == "Cancelled") query = query.Where(i => i.OrderState == OrderStatus.Cancelled);
 
         if (!string.IsNullOrWhiteSpace(q))
             query = query.Where(i => i.Firm!.Name.Contains(q) || i.InvoiceNumber.Contains(q));
@@ -69,6 +83,14 @@ public class InvoiceController : Controller
     public Task<IActionResult> EditExpense(int? id)
         => Edit(id, InvoiceType.Expense);
 
+    [HttpGet("orders/edit")]
+    public Task<IActionResult> EditOrder(int? id)
+        => Edit(id, InvoiceType.SalesOrder);
+
+    [HttpGet("purchaseorders/edit")]
+    public Task<IActionResult> EditPurchaseOrder(int? id)
+        => Edit(id, InvoiceType.PurchaseOrder);
+
     private async Task<IActionResult> Edit(int? id, InvoiceType type)
     {
         Invoice invoice;
@@ -83,6 +105,7 @@ public class InvoiceController : Controller
         else
         {
             invoice = new Invoice { Type = type, InvoiceDate = DateTime.Now };
+            if (invoice.IsOrder) invoice.OrderState = OrderStatus.Waiting;
         }
 
         await FillEditViewBags(invoice);
@@ -108,8 +131,10 @@ public class InvoiceController : Controller
 
         InvoiceCalculator.Calculate(model);
 
+        if (model.IsOrder && model.OrderState == null) model.OrderState = OrderStatus.Waiting;
+
         if (string.IsNullOrWhiteSpace(model.InvoiceNumber))
-            model.InvoiceNumber = await NextInvoiceNumber();
+            model.InvoiceNumber = await NextInvoiceNumber(model.IsOrder ? "SIP" : "ISB");
 
         if (model.Id == 0)
         {
@@ -133,6 +158,8 @@ public class InvoiceController : Controller
             {
                 InvoiceType.Purchase => RedirectToAction(nameof(EditPurchase)),
                 InvoiceType.Expense => RedirectToAction(nameof(EditExpense)),
+                InvoiceType.SalesOrder => RedirectToAction(nameof(EditOrder)),
+                InvoiceType.PurchaseOrder => RedirectToAction(nameof(EditPurchaseOrder)),
                 _ => RedirectToAction(nameof(EditSales), new { type = model.Type == InvoiceType.SalesRetail ? "Net" : "Gross" })
             };
         }
@@ -161,20 +188,28 @@ public class InvoiceController : Controller
         {
             "Sales" => query.Where(i => i.Type == InvoiceType.SalesWholesale || i.Type == InvoiceType.SalesRetail),
             "Purchase" => query.Where(i => i.Type == InvoiceType.Purchase),
+            "Orders" => query.Where(i => i.Type == InvoiceType.SalesOrder),
+            "PurchaseOrders" => query.Where(i => i.Type == InvoiceType.PurchaseOrder),
             _ => query.Where(i => i.Type == InvoiceType.Expense)
         };
         if (status == "Open") query = query.Where(i => i.Status == InvoiceStatus.Open);
         else if (status == "Paid") query = query.Where(i => i.Status == InvoiceStatus.Paid);
+        else if (status == "Waiting") query = query.Where(i => i.OrderState == OrderStatus.Waiting);
+        else if (status == "Invoiced") query = query.Where(i => i.OrderState == OrderStatus.Invoiced);
+        else if (status == "Cancelled") query = query.Where(i => i.OrderState == OrderStatus.Cancelled);
         if (!string.IsNullOrWhiteSpace(q))
             query = query.Where(i => i.Firm!.Name.Contains(q) || i.InvoiceNumber.Contains(q));
         if (start.HasValue) query = query.Where(i => i.InvoiceDate >= start.Value);
         if (end.HasValue) query = query.Where(i => i.InvoiceDate < end.Value.AddDays(1));
 
         var invoices = await query.OrderByDescending(i => i.InvoiceDate).ToListAsync();
+        bool isOrderMode = mode is "Orders" or "PurchaseOrders";
 
         // Türkçe Excel: noktalı virgül ayırıcı + UTF-8 BOM
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("Fatura No;Firma;Fatura Tipi;Fatura Tarihi;Vade Tarihi;Matrah;KDV;Genel Toplam;Tahsil Edilen;Durum");
+        sb.AppendLine(isOrderMode
+            ? "Sipariş No;Firma;Sipariş Tipi;Tarih;Teslim Tarihi;Matrah;KDV;Genel Toplam;Durum"
+            : "Fatura No;Firma;Fatura Tipi;Fatura Tarihi;Vade Tarihi;Matrah;KDV;Genel Toplam;Tahsil Edilen;Durum");
         foreach (var i in invoices)
         {
             string typeName = i.Type switch
@@ -182,18 +217,36 @@ public class InvoiceController : Controller
                 InvoiceType.SalesWholesale => "Toptan (KDV Hariç)",
                 InvoiceType.SalesRetail => "Perakende (KDV Dahil)",
                 InvoiceType.Expense => "Gider",
+                InvoiceType.SalesOrder => "Satış Siparişi",
+                InvoiceType.PurchaseOrder => "Alış Siparişi",
                 _ => "Alış"
             };
             string firmName = (i.Firm?.Name ?? "").Replace(";", ",");
-            sb.AppendLine($"{i.InvoiceNumber};{firmName};{typeName};{i.InvoiceDate:dd.MM.yyyy};" +
-                $"{i.DueDate:dd.MM.yyyy};{i.GrandTotal - i.VatTotal:N2};{i.VatTotal:N2};{i.GrandTotal:N2};" +
-                $"{i.PaidTotal:N2};{(i.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık")}");
+            if (isOrderMode)
+            {
+                string orderStatus = i.OrderState switch
+                {
+                    OrderStatus.Invoiced => "Faturalandı",
+                    OrderStatus.Cancelled => "İptal",
+                    _ => "Bekliyor"
+                };
+                sb.AppendLine($"{i.InvoiceNumber};{firmName};{typeName};{i.InvoiceDate:dd.MM.yyyy};" +
+                    $"{i.DueDate:dd.MM.yyyy};{i.GrandTotal - i.VatTotal:N2};{i.VatTotal:N2};{i.GrandTotal:N2};{orderStatus}");
+            }
+            else
+            {
+                sb.AppendLine($"{i.InvoiceNumber};{firmName};{typeName};{i.InvoiceDate:dd.MM.yyyy};" +
+                    $"{i.DueDate:dd.MM.yyyy};{i.GrandTotal - i.VatTotal:N2};{i.VatTotal:N2};{i.GrandTotal:N2};" +
+                    $"{i.PaidTotal:N2};{(i.Status == InvoiceStatus.Paid ? "Ödendi" : "Açık")}");
+            }
         }
 
         string fileName = mode switch
         {
             "Sales" => "satis-faturalari",
             "Purchase" => "alis-faturalari",
+            "Orders" => "satis-siparisleri",
+            "PurchaseOrders" => "alis-siparisleri",
             _ => "giderler"
         };
         var bytes = System.Text.Encoding.UTF8.GetPreamble()
@@ -219,13 +272,94 @@ public class InvoiceController : Controller
     {
         InvoiceType.Purchase => RedirectToAction(nameof(Purchase)),
         InvoiceType.Expense => RedirectToAction(nameof(Expenses)),
+        InvoiceType.SalesOrder => RedirectToAction(nameof(Orders)),
+        InvoiceType.PurchaseOrder => RedirectToAction(nameof(PurchaseOrders)),
         _ => RedirectToAction(nameof(Sales))
     };
 
-    private async Task<string> NextInvoiceNumber()
+    // Sipariş: bekleyen siparişi faturaya kopyalar ve Faturalandı işaretler
+    [HttpPost("convert/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Convert(int id)
+    {
+        var order = await _db.Invoices.Include(i => i.Lines).FirstOrDefaultAsync(i => i.Id == id);
+        if (order == null) return NotFound();
+        if (!order.IsOrder || order.OrderState != OrderStatus.Waiting)
+        {
+            TempData["Error"] = "Yalnızca bekleyen siparişler faturaya dönüştürülebilir.";
+            return RedirectToList(order.Type);
+        }
+
+        var invoice = new Invoice
+        {
+            Type = order.Type == InvoiceType.SalesOrder ? InvoiceType.SalesWholesale : InvoiceType.Purchase,
+            FirmId = order.FirmId,
+            InvoiceDate = DateTime.Now,
+            DueDate = order.DueDate,
+            Currency = order.Currency,
+            Category = order.Category,
+            Description = $"{order.InvoiceNumber} numaralı siparişten oluşturuldu. {order.Description}".Trim(),
+            GeneralDiscountValue = order.GeneralDiscountValue,
+            GeneralDiscountType = order.GeneralDiscountType,
+            Lines = order.Lines.Select(l => new InvoiceLine
+            {
+                ProductId = l.ProductId,
+                ServiceId = l.ServiceId,
+                ItemName = l.ItemName,
+                Quantity = l.Quantity,
+                Unit = l.Unit,
+                UnitPrice = l.UnitPrice,
+                VatRate = l.VatRate,
+                DiscountValue = l.DiscountValue,
+                DiscountType = l.DiscountType
+            }).ToList()
+        };
+        InvoiceCalculator.Calculate(invoice);
+        invoice.InvoiceNumber = await NextInvoiceNumber("ISB");
+
+        _db.Invoices.Add(invoice);
+        await _db.SaveChangesAsync();
+
+        order.OrderState = OrderStatus.Invoiced;
+        order.ConvertedInvoiceId = invoice.Id;
+        await _db.SaveChangesAsync();
+
+        TempData["Success"] = $"Sipariş {invoice.InvoiceNumber} numaralı faturaya dönüştürüldü.";
+        return invoice.Type == InvoiceType.Purchase
+            ? RedirectToAction(nameof(EditPurchase), new { id = invoice.Id })
+            : RedirectToAction(nameof(EditSales), new { id = invoice.Id });
+    }
+
+    // Bekleyen siparişi iptal eder / iptal siparişi tekrar bekleyene alır
+    [HttpPost("cancelorder/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelOrder(int id)
+    {
+        var order = await _db.Invoices.FirstOrDefaultAsync(i => i.Id == id);
+        if (order == null || !order.IsOrder) return NotFound();
+
+        if (order.OrderState == OrderStatus.Waiting)
+        {
+            order.OrderState = OrderStatus.Cancelled;
+            TempData["Success"] = "Sipariş iptal edildi.";
+        }
+        else if (order.OrderState == OrderStatus.Cancelled)
+        {
+            order.OrderState = OrderStatus.Waiting;
+            TempData["Success"] = "Sipariş tekrar beklemeye alındı.";
+        }
+        else
+        {
+            TempData["Error"] = "Faturalanmış sipariş iptal edilemez.";
+        }
+        await _db.SaveChangesAsync();
+        return RedirectToList(order.Type);
+    }
+
+    private async Task<string> NextInvoiceNumber(string series = "ISB")
     {
         var year = DateTime.Today.Year;
-        var prefix = $"ISB{year}";
+        var prefix = $"{series}{year}";
         var last = await _db.Invoices
             .Where(i => i.InvoiceNumber.StartsWith(prefix))
             .OrderByDescending(i => i.InvoiceNumber)
@@ -240,7 +374,8 @@ public class InvoiceController : Controller
 
     private async Task FillEditViewBags(Invoice invoice)
     {
-        bool isSales = invoice.IsSales;
+        // Satış tarafı (satış faturaları + satış siparişi) müşterileri ve satış fiyatını kullanır
+        bool isSales = invoice.IsSales || invoice.Type == InvoiceType.SalesOrder;
         bool isExpense = invoice.Type == InvoiceType.Expense;
 
         ViewBag.Firms = await _db.Firms.AsNoTracking()

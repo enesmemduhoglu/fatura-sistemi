@@ -61,11 +61,11 @@
                 <a href="/"><i class="fas fa-chart-line"></i><span>Genel Bakış</span></a>
             </li>
             <li class="menu-separator"></li>
-            <li class="menu-item has-sub @Active("/invoice/sales")">
+            <li class="menu-item has-sub @Active("/invoice/sales")@Active("/invoice/orders")">
                 <a href="#" class="menu-toggle"><i class="fas fa-file-invoice"></i><span>Satışlar</span><i class="fas fa-angle-right arrow"></i></a>
                 <ul class="submenu">
                     <li><a href="/invoice/sales"><i class="fas fa-file-invoice"></i><span>Satış Faturaları</span></a></li>
-                    <li><a href="/comingsoon?title=Siparişler"><i class="fas fa-shopping-basket"></i><span>Siparişler</span></a></li>
+                    <li><a href="/invoice/orders"><i class="fas fa-shopping-basket"></i><span>Siparişler</span></a></li>
                     <li><a href="/comingsoon?title=Verilen Serbest Meslek Makbuzu"><i class="fas fa-file-invoice"></i><span>Verilen Serbest Meslek Makbuzu</span></a></li>
                 </ul>
             </li>
@@ -73,7 +73,7 @@
                 <a href="#" class="menu-toggle"><i class="fas fa-file-invoice"></i><span>Alışlar</span><i class="fas fa-angle-right arrow"></i></a>
                 <ul class="submenu">
                     <li><a href="/invoice/purchase"><i class="fas fa-file-invoice"></i><span>Alış Faturaları</span></a></li>
-                    <li><a href="/comingsoon?title=Alış Sipariş"><i class="fas fa-shopping-basket"></i><span>Alış Sipariş</span></a></li>
+                    <li><a href="/invoice/purchaseorders"><i class="fas fa-shopping-basket"></i><span>Alış Sipariş</span></a></li>
                     <li><a href="/comingsoon?title=Alınan Serbest Meslek Makbuzu"><i class="fas fa-file-invoice"></i><span>Alınan Serbest Meslek Makbuzu</span></a></li>
                 </ul>
             </li>
@@ -116,6 +116,7 @@
                 <a href="#" class="menu-toggle"><i class="fas fa-cog"></i><span>Ayarlar</span><i class="fas fa-angle-right arrow"></i></a>
                 <ul class="submenu">
                     <li><a href="/manage/index"><i class="fas fa-user-cog"></i><span>Firma Bilgilerim</span></a></li>
+                    <li><a href="/account/changepassword"><i class="fas fa-key"></i><span>Parola Değiştir</span></a></li>
                     <li><a href="/comingsoon?title=Kağıt Fatura Şablonları"><i class="fas fa-th-large"></i><span>Kağıt Fatura Şablonları</span></a></li>
                     <li><a href="/comingsoon?title=Verileri İçe Aktar"><i class="fas fa-th-large"></i><span>Verileri İçe Aktar</span></a></li>
                     <li><a href="/comingsoon?title=Verileri Dışa Aktar"><i class="fas fa-th-large"></i><span>Verileri Dışa Aktar</span></a></li>

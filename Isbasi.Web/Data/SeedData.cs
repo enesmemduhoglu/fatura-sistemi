@@ -128,6 +128,33 @@ public static class SeedData
         invoices.Add(MakeInvoice(InvoiceType.Expense, firms[3], new DateTime(year, 4, 15),
             ServiceLine(services[0], 5)));
 
+        // Örnek siparişler (SIP serisi, bekleyen durumda)
+        var salesOrder = new Invoice
+        {
+            InvoiceNumber = $"SIP{year}{1:D9}",
+            Type = InvoiceType.SalesOrder,
+            FirmId = firms[0].Id,
+            InvoiceDate = DateTime.Today.AddDays(-3),
+            DueDate = DateTime.Today.AddDays(10),
+            OrderState = OrderStatus.Waiting,
+            Lines = new List<InvoiceLine> { Line(products[0], 10), Line(products[3], 5) }
+        };
+        InvoiceCalculator.Calculate(salesOrder);
+        invoices.Add(salesOrder);
+
+        var purchaseOrder = new Invoice
+        {
+            InvoiceNumber = $"SIP{year}{2:D9}",
+            Type = InvoiceType.PurchaseOrder,
+            FirmId = firms[3].Id,
+            InvoiceDate = DateTime.Today.AddDays(-1),
+            DueDate = DateTime.Today.AddDays(14),
+            OrderState = OrderStatus.Waiting,
+            Lines = new List<InvoiceLine> { Line(products[1], 60, sales: false) }
+        };
+        InvoiceCalculator.Calculate(purchaseOrder);
+        invoices.Add(purchaseOrder);
+
         db.Invoices.AddRange(invoices);
         db.SaveChanges();
 
