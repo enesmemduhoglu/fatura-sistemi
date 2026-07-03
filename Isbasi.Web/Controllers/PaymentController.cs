@@ -67,8 +67,9 @@ public class PaymentController : Controller
             return View(model);
         }
 
+        // Not: invoice izlendiği için EF, Add sırasında ilişki fixup'ı ile modeli
+        // invoice.Payments'a kendisi ekler; elle de eklemek tutarı çift saydırır
         _db.Payments.Add(model);
-        invoice.Payments.Add(model);
         UpdateInvoiceStatus(invoice);
         await _db.SaveChangesAsync();
 
