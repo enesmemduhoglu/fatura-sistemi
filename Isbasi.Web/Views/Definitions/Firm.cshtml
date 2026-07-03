@@ -72,6 +72,7 @@
                             <td>@firm.Phone</td>
                             <td class="text-end fw-medium @(balance >= 0 ? "text-success" : "text-danger")">@balance.ToString("N2") ₺</td>
                             <td class="text-end">
+                                <a href="/definitions/firm/statement?id=@firm.Id" class="btn btn-sm btn-outline-secondary" title="Cari Ekstre"><i class="fas fa-file-alt"></i></a>
                                 <a href="/definitions/firm/edit?id=@firm.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
                                 <form method="post" action="/definitions/firm/delete/@firm.Id" class="d-inline"
                                       onsubmit="return confirm('@firm.Name silinsin mi?');">

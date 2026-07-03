@@ -1,5 +1,6 @@
 using Isbasi.Web.Data;
 using Isbasi.Web.Models;
+using Isbasi.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -91,6 +92,130 @@ public class DefinitionsController : Controller
             TempData["Success"] = "Firma silindi.";
         }
         return RedirectToAction(nameof(Firm));
+    }
+
+    // Cari ekstre: fatura, tahsilat/ödeme, çek ve SMM hareketleri kronolojik dökümde.
+    // Borç = firmanın bize borcunu artıran (satış, verilen SMM, tedarikçiye ödeme/verilen çek),
+    // Alacak = azaltan (alış/gider, tahsilat, alınan çek, alınan SMM); bakiye = borç − alacak.
+    [HttpGet("firm/statement")]
+    public async Task<IActionResult> FirmStatement(int id, DateTime? start, DateTime? end)
+    {
+        var firm = await _db.Firms.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
+        if (firm == null) return NotFound();
+
+        var entries = new List<StatementRow>();
+
+        var invoices = await _db.Invoices.AsNoTracking()
+            .Where(i => i.FirmId == id
+                && i.Type != InvoiceType.SalesOrder && i.Type != InvoiceType.PurchaseOrder)
+            .ToListAsync();
+        foreach (var i in invoices)
+        {
+            bool debit = i.IsSales;
+            entries.Add(new StatementRow
+            {
+                Date = i.InvoiceDate,
+                DocNo = i.InvoiceNumber,
+                DocType = i.Type switch
+                {
+                    InvoiceType.SalesWholesale => "Satış Faturası",
+                    InvoiceType.SalesRetail => "Satış Faturası",
+                    InvoiceType.Purchase => "Alış Faturası",
+                    _ => "Gider Faturası"
+                },
+                Description = i.Description,
+                Debit = debit ? i.GrandTotal : 0,
+                Credit = debit ? 0 : i.GrandTotal,
+                Link = i.Type switch
+                {
+                    InvoiceType.Purchase => $"/invoice/purchase/edit?id={i.Id}",
+                    InvoiceType.Expense => $"/invoice/purchaseservices/edit?id={i.Id}",
+                    _ => $"/invoice/sales/edit?id={i.Id}"
+                }
+            });
+        }
+
+        var payments = await _db.Payments.AsNoTracking()
+            .Include(p => p.Invoice)
+            .Include(p => p.Safe).Include(p => p.BankAccount)
+            .Where(p => p.Invoice!.FirmId == id)
+            .ToListAsync();
+        foreach (var p in payments)
+        {
+            bool incoming = p.Invoice!.IsSales;   // tahsilat: borcu azaltır (alacak)
+            entries.Add(new StatementRow
+            {
+                Date = p.Date,
+                DocNo = p.Invoice.InvoiceNumber,
+                DocType = incoming ? "Tahsilat" : "Ödeme",
+                Description = p.Description ?? (p.Safe?.Name ?? p.BankAccount?.Name),
+                Debit = incoming ? 0 : p.Amount,
+                Credit = incoming ? p.Amount : 0,
+                Link = $"/payment/add?invoiceId={p.InvoiceId}"
+            });
+        }
+
+        var cheques = await _db.Cheques.AsNoTracking()
+            .Where(c => c.FirmId == id && c.Status != ChequeStatus.Bounced)
+            .ToListAsync();
+        foreach (var c in cheques)
+        {
+            bool received = c.Type == ChequeType.Received;   // alınan çek: borcu azaltır
+            entries.Add(new StatementRow
+            {
+                Date = c.IssueDate,
+                DocNo = c.ChequeNumber,
+                DocType = received ? "Alınan Çek" : "Verilen Çek",
+                Description = c.BankName == null ? c.Description : $"{c.BankName} — vade {c.DueDate:dd.MM.yyyy}",
+                Debit = received ? 0 : c.Amount,
+                Credit = received ? c.Amount : 0,
+                Link = $"/cheque/edit?id={c.Id}"
+            });
+        }
+
+        var receipts = await _db.FreelanceReceipts.AsNoTracking()
+            .Where(r => r.FirmId == id)
+            .ToListAsync();
+        foreach (var r in receipts)
+        {
+            bool issued = r.Type == ReceiptType.Issued;   // verilen SMM: fatura gibi borçlandırır
+            entries.Add(new StatementRow
+            {
+                Date = r.Date,
+                DocNo = r.ReceiptNumber,
+                DocType = issued ? "Verilen SMM" : "Alınan SMM",
+                Description = r.Description,
+                Debit = issued ? r.NetAmount : 0,
+                Credit = issued ? 0 : r.NetAmount,
+                Link = $"/receipt/edit?id={r.Id}"
+            });
+        }
+
+        var ordered = entries.OrderBy(e => e.Date).ThenBy(e => e.DocNo).ToList();
+
+        var vm = new FirmStatementViewModel { Firm = firm, Start = start, End = end };
+        decimal balance = 0;
+        foreach (var entry in ordered)
+        {
+            if (start.HasValue && entry.Date < start.Value)
+            {
+                balance += entry.Debit - entry.Credit;   // filtre öncesi hareketler devire toplanır
+                continue;
+            }
+            if (end.HasValue && entry.Date >= end.Value.AddDays(1)) continue;
+
+            if (start.HasValue && !vm.HasOpening)
+            {
+                vm.OpeningBalance = balance;
+                vm.HasOpening = true;
+            }
+            balance += entry.Debit - entry.Credit;
+            entry.Balance = balance;
+            vm.Rows.Add(entry);
+        }
+        if (start.HasValue && !vm.HasOpening) { vm.OpeningBalance = balance; vm.HasOpening = true; }
+
+        return View(vm);
     }
 
     // ---- Ürünler ----

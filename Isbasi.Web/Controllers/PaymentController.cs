@@ -12,6 +12,38 @@ public class PaymentController : Controller
 
     public PaymentController(AppDbContext db) => _db = db;
 
+    // Tüm tahsilat/ödeme hareketleri tek listede; yön faturanın tipinden gelir
+    [HttpGet("list")]
+    public async Task<IActionResult> List(string? direction, string? account, string? q,
+        DateTime? start, DateTime? end)
+    {
+        var query = _db.Payments.AsNoTracking()
+            .Include(p => p.Invoice).ThenInclude(i => i!.Firm)
+            .Include(p => p.Safe).Include(p => p.BankAccount)
+            .AsQueryable();
+
+        if (direction == "in")
+            query = query.Where(p => p.Invoice!.Type == InvoiceType.SalesWholesale || p.Invoice.Type == InvoiceType.SalesRetail);
+        else if (direction == "out")
+            query = query.Where(p => p.Invoice!.Type == InvoiceType.Purchase || p.Invoice.Type == InvoiceType.Expense);
+
+        if (account == "safe") query = query.Where(p => p.SafeId != null);
+        else if (account == "bank") query = query.Where(p => p.BankAccountId != null);
+
+        if (!string.IsNullOrWhiteSpace(q))
+            query = query.Where(p => p.Invoice!.Firm!.Name.Contains(q) || p.Invoice.InvoiceNumber.Contains(q));
+
+        if (start.HasValue) query = query.Where(p => p.Date >= start.Value);
+        if (end.HasValue) query = query.Where(p => p.Date < end.Value.AddDays(1));
+
+        ViewBag.Direction = direction;
+        ViewBag.Account = account;
+        ViewBag.Query = q;
+        ViewBag.Start = start;
+        ViewBag.End = end;
+        return View(await query.OrderByDescending(p => p.Date).ThenByDescending(p => p.Id).ToListAsync());
+    }
+
     [HttpGet("add")]
     public async Task<IActionResult> Add(int invoiceId)
     {

@@ -1,0 +1,132 @@
+@model FirmStatementViewModel
+@{
+    ViewData["Title"] = "Cari Ekstre";
+    var firm = Model.Firm;
+    decimal balance = Model.Balance;
+}
+
+<div class="page-header">
+    <h1 class="page-title">
+        <span class="breadcrumb-part"><a href="/definitions/firm" class="text-decoration-none">Müşteri &amp; Tedarikçi</a> &gt;</span>
+        Cari Ekstre — @firm.Name
+    </h1>
+    <a href="/definitions/firm/edit?id=@firm.Id" class="btn btn-cancel btn-sm"><i class="fas fa-user me-1"></i> Firma Kartı</a>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-4">
+        <div class="portlet h-100">
+            <div class="portlet-title">Firma Bilgileri</div>
+            <div class="small" style="line-height:2">
+                <div><span class="text-muted">Tip:</span> @(firm.Kind == FirmKind.Corporate ? "Kurumsal" : "Bireysel")
+                    @if (firm.IsCustomer) { <span class="status-badge status-paid ms-1">Müşteri</span> }
+                    @if (firm.IsSupplier) { <span class="status-badge status-open ms-1">Tedarikçi</span> }
+                </div>
+                @if (!string.IsNullOrEmpty(firm.TaxNumber)) { <div><span class="text-muted">Vergi No:</span> @firm.TaxNumber @(string.IsNullOrEmpty(firm.TaxOffice) ? "" : $"({firm.TaxOffice})")</div> }
+                @if (!string.IsNullOrEmpty(firm.City)) { <div><span class="text-muted">Adres:</span> @firm.District @(string.IsNullOrEmpty(firm.District) ? "" : "/ ")@firm.City</div> }
+                @if (!string.IsNullOrEmpty(firm.Phone)) { <div><span class="text-muted">Telefon:</span> @firm.Phone</div> }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="portlet h-100">
+            <div class="portlet-title">Özet</div>
+            <div class="row text-center g-3">
+                <div class="col-4">
+                    <div class="text-muted small">Toplam Borç</div>
+                    <div class="fs-5 fw-bold">@Model.TotalDebit.ToString("N2") ₺</div>
+                </div>
+                <div class="col-4">
+                    <div class="text-muted small">Toplam Alacak</div>
+                    <div class="fs-5 fw-bold">@Model.TotalCredit.ToString("N2") ₺</div>
+                </div>
+                <div class="col-4">
+                    <div class="text-muted small">Bakiye</div>
+                    <div class="fs-5 fw-bold @(balance >= 0 ? "text-success" : "text-danger")">
+                        @Math.Abs(balance).ToString("N2") ₺
+                        <span class="fs-6 fw-normal">@(balance == 0 ? "" : balance > 0 ? "(Borçlu)" : "(Alacaklı)")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="portlet">
+    <form method="get" class="row g-2 mb-3 align-items-center">
+        <input type="hidden" name="id" value="@firm.Id" />
+        <div class="col-auto"><label class="form-label mb-0 small text-muted">Tarih Aralığı</label></div>
+        <div class="col-md-3"><input type="date" name="start" value="@(Model.Start?.ToString("yyyy-MM-dd"))" class="form-control" /></div>
+        <div class="col-auto">—</div>
+        <div class="col-md-3"><input type="date" name="end" value="@(Model.End?.ToString("yyyy-MM-dd"))" class="form-control" /></div>
+        <div class="col-auto"><button type="submit" class="btn btn-outline-secondary">Filtrele</button></div>
+        @if (Model.Start.HasValue || Model.End.HasValue)
+        {
+            <div class="col-auto"><a href="/definitions/firm/statement?id=@firm.Id" class="btn btn-sm btn-link text-decoration-none">Temizle</a></div>
+        }
+    </form>
+
+    @if (Model.Rows.Count == 0 && !Model.HasOpening)
+    {
+        <div class="empty-state">
+            <i class="fas fa-file-alt"></i>
+            <div class="title">Hareket bulunmuyor</div>
+            <div>Bu firma için seçilen aralıkta kayıtlı hareket yok.</div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Belge No</th>
+                        <th>Tür</th>
+                        <th>Açıklama</th>
+                        <th class="text-end">Borç</th>
+                        <th class="text-end">Alacak</th>
+                        <th class="text-end">Bakiye</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.HasOpening)
+                    {
+                        <tr class="text-muted" style="background:#fbfbfc">
+                            <td>@Model.Start!.Value.ToString("dd.MM.yyyy")</td>
+                            <td>—</td>
+                            <td class="fw-medium">Devir</td>
+                            <td></td>
+                            <td class="text-end"></td>
+                            <td class="text-end"></td>
+                            <td class="text-end fw-medium">@Model.OpeningBalance.ToString("N2") ₺</td>
+                        </tr>
+                    }
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>@row.Date.ToString("dd.MM.yyyy")</td>
+                            <td>
+                                @if (row.Link != null) { <a href="@row.Link" class="fw-medium text-decoration-none">@row.DocNo</a> }
+                                else { @row.DocNo }
+                            </td>
+                            <td>@row.DocType</td>
+                            <td class="text-muted small">@row.Description</td>
+                            <td class="text-end">@(row.Debit == 0 ? "-" : row.Debit.ToString("N2"))</td>
+                            <td class="text-end">@(row.Credit == 0 ? "-" : row.Credit.ToString("N2"))</td>
+                            <td class="text-end fw-medium @(row.Balance < 0 ? "text-danger" : "")">@row.Balance.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold" style="background:#f7f8fa">
+                        <td colspan="4">Toplam</td>
+                        <td class="text-end">@Model.TotalDebit.ToString("N2")</td>
+                        <td class="text-end">@Model.TotalCredit.ToString("N2")</td>
+                        <td class="text-end">@balance.ToString("N2") ₺</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+</div>
