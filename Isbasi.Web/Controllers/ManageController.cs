@@ -270,8 +270,8 @@ public class ManageController : Controller
 
     // Türkçe ("1.234,56") ve nokta ondalıklı ("1234.56") biçimlerin ikisini de kabul eder.
     // Virgül içeren değerler Türkçe sayılır; yalnızca nokta içerenlerde nokta ondalık
-    // ayracıdır ("85.25" = 85,25 — tr kültürüyle 8525 olurdu).
-    private static decimal ParseDecimal(string value, decimal fallback = 0)
+    // ayracıdır ("85.25" = 85,25 — tr kültürüyle 8525 olurdu). internal: test edilebilirlik.
+    internal static decimal ParseDecimal(string value, decimal fallback = 0)
     {
         if (string.IsNullOrWhiteSpace(value)) return fallback;
         var culture = value.Contains(',') ? new CultureInfo("tr-TR") : CultureInfo.InvariantCulture;

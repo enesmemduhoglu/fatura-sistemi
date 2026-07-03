@@ -55,3 +55,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+// WebApplicationFactory tabanlı entegrasyon testlerinin erişebilmesi için
+public partial class Program { }
