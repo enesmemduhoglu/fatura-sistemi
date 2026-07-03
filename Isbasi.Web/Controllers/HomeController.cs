@@ -14,6 +14,11 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
+        // Vadesi gelen tekrarlama planlarından faturalar üretilir (lazy tetikleme)
+        int generated = await RecurringGenerator.GenerateDue(_db);
+        if (generated > 0)
+            TempData["Success"] = $"{generated} tekrarlayan fatura otomatik oluşturuldu.";
+
         var year = DateTime.Today.Year;
         // Siparişler mali kayıt değildir; nakit akışı ve bilanço dışında tutulur
         var invoices = await _db.Invoices.AsNoTracking()

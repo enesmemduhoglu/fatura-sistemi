@@ -1,0 +1,98 @@
+@model List<RecurringPlan>
+@{
+    ViewData["Title"] = "Tekrarlayan Faturalar";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Tekrarlayan Faturalar</h1>
+</div>
+
+<div class="portlet">
+    <p class="text-muted small mb-3">
+        Plan, kaynak belgeyi şablon alır; vadesi gelen her dönemde satırlarıyla yeni bir <strong>Açık</strong> fatura üretilir.
+        Üretim, bu sayfa ya da Genel Bakış açıldığında otomatik çalışır. Plan kurmak için fatura listesindeki
+        <i class="fas fa-sync-alt"></i> <em>Tekrarla</em> butonunu kullanın.
+    </p>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="fas fa-sync-alt"></i>
+            <div class="title">Tekrarlama planı bulunmuyor</div>
+            <div>Fatura listesinde bir belgenin "Tekrarla" butonuna basarak ilk planınızı oluşturun.</div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Kaynak Belge</th>
+                        <th>Firma</th>
+                        <th class="text-end">Tutar</th>
+                        <th>Sıklık</th>
+                        <th>Sonraki Fatura</th>
+                        <th>Bitiş</th>
+                        <th class="text-end">Üretilen</th>
+                        <th>Durum</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var plan in Model)
+                    {
+                        var invoice = plan.SourceInvoice!;
+                        string editUrl = invoice.Type switch
+                        {
+                            InvoiceType.Purchase => $"/invoice/purchase/edit?id={invoice.Id}",
+                            InvoiceType.Expense => $"/invoice/purchaseservices/edit?id={invoice.Id}",
+                            _ => $"/invoice/sales/edit?id={invoice.Id}"
+                        };
+                        <tr class="@(plan.IsActive ? "" : "text-muted")">
+                            <td><a href="@editUrl" class="fw-medium text-decoration-none">@invoice.InvoiceNumber</a></td>
+                            <td>@invoice.Firm?.Name</td>
+                            <td class="text-end fw-medium">@invoice.GrandTotal.ToString("N2") ₺</td>
+                            <td>
+                                @(plan.Frequency switch
+                                {
+                                    RecurringFrequency.Weekly => "Haftalık",
+                                    RecurringFrequency.Quarterly => "3 Aylık",
+                                    RecurringFrequency.Yearly => "Yıllık",
+                                    _ => "Aylık"
+                                })
+                            </td>
+                            <td>@plan.NextRunDate.ToString("dd.MM.yyyy")</td>
+                            <td>@(plan.EndDate?.ToString("dd.MM.yyyy") ?? "Süresiz")</td>
+                            <td class="text-end">@plan.GeneratedCount</td>
+                            <td>
+                                <span class="status-badge @(plan.IsActive ? "status-paid" : "status-cancelled")">
+                                    @(plan.IsActive ? "Aktif" : "Duraklatıldı")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <form method="post" action="/recurring/runnow/@plan.Id" class="d-inline"
+                                      onsubmit="return confirm('Bu plandan hemen bir fatura üretilsin mi?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Şimdi Oluştur"><i class="fas fa-bolt"></i></button>
+                                </form>
+                                <form method="post" action="/recurring/toggle/@plan.Id" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                                            title="@(plan.IsActive ? "Duraklat" : "Aktifleştir")">
+                                        <i class="fas @(plan.IsActive ? "fa-pause" : "fa-play")"></i>
+                                    </button>
+                                </form>
+                                <form method="post" action="/recurring/delete/@plan.Id" class="d-inline"
+                                      onsubmit="return confirm('Tekrarlama planı silinsin mi? Üretilmiş faturalar korunur.');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -185,6 +185,7 @@
                                 else
                                 {
                                     <a href="/payment/add?invoiceId=@invoice.Id" class="btn btn-sm btn-outline-success" title="@(Model.IsSales ? "Tahsilat Ekle" : "Ödeme Ekle")"><i class="fas fa-money-bill"></i></a>
+                                    <a href="/recurring/create?invoiceId=@invoice.Id" class="btn btn-sm btn-outline-secondary" title="Tekrarla"><i class="fas fa-sync-alt"></i></a>
                                 }
                                 <a href="/invoice/copy/@invoice.Id" class="btn btn-sm btn-outline-secondary" title="Kopyala"><i class="fas fa-copy"></i></a>
                                 <a href="/invoice/print/@invoice.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Yazdır"><i class="fas fa-print"></i></a>

@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Cheque> Cheques => Set<Cheque>();
     public DbSet<FreelanceReceipt> FreelanceReceipts => Set<FreelanceReceipt>();
+    public DbSet<RecurringPlan> RecurringPlans => Set<RecurringPlan>();
     public DbSet<CompanySettings> CompanySettings => Set<CompanySettings>();
     public DbSet<User> Users => Set<User>();
 
@@ -77,5 +78,12 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(r => r.FirmId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Şablon fatura silinirse plan anlamsız kalır; birlikte silinir
+        modelBuilder.Entity<RecurringPlan>()
+            .HasOne(p => p.SourceInvoice)
+            .WithMany()
+            .HasForeignKey(p => p.SourceInvoiceId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -403,21 +403,7 @@ public class InvoiceController : Controller
         return RedirectToList(order.Type);
     }
 
-    private async Task<string> NextInvoiceNumber(string series = "ISB")
-    {
-        var year = DateTime.Today.Year;
-        var prefix = $"{series}{year}";
-        var last = await _db.Invoices
-            .Where(i => i.InvoiceNumber.StartsWith(prefix))
-            .OrderByDescending(i => i.InvoiceNumber)
-            .Select(i => i.InvoiceNumber)
-            .FirstOrDefaultAsync();
-
-        int seq = 1;
-        if (last != null && int.TryParse(last.Substring(prefix.Length), out int lastSeq))
-            seq = lastSeq + 1;
-        return $"{prefix}{seq:D9}";
-    }
+    private Task<string> NextInvoiceNumber(string series = "ISB") => InvoiceNumbers.Next(_db, series);
 
     private async Task FillEditViewBags(Invoice invoice)
     {
