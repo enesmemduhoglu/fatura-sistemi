@@ -114,7 +114,9 @@ public class InvoiceController : Controller
 
     [HttpPost("save")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Save(Invoice model, string? submitAction)
+    public async Task<IActionResult> Save(Invoice model, string? submitAction,
+        string? firmAddress, string? firmCountry, string? firmCity, string? firmDistrict,
+        string? firmTaxOffice, string? firmTaxNumber, FirmKind? firmKind)
     {
         model.Lines = model.Lines.Where(l => !string.IsNullOrWhiteSpace(l.ItemName)).ToList();
 
@@ -130,6 +132,19 @@ public class InvoiceController : Controller
         }
 
         InvoiceCalculator.Calculate(model);
+
+        // Formda düzenlenen firma bilgileri seçili firmanın kartına yazılır (İşbaşı davranışı)
+        var firm = await _db.Firms.FindAsync(model.FirmId);
+        if (firm != null)
+        {
+            firm.Address = string.IsNullOrWhiteSpace(firmAddress) ? null : firmAddress.Trim();
+            firm.Country = string.IsNullOrWhiteSpace(firmCountry) ? null : firmCountry.Trim();
+            firm.City = string.IsNullOrWhiteSpace(firmCity) ? null : firmCity.Trim();
+            firm.District = string.IsNullOrWhiteSpace(firmDistrict) ? null : firmDistrict.Trim();
+            firm.TaxOffice = string.IsNullOrWhiteSpace(firmTaxOffice) ? null : firmTaxOffice.Trim();
+            firm.TaxNumber = string.IsNullOrWhiteSpace(firmTaxNumber) ? null : firmTaxNumber.Trim();
+            if (firmKind.HasValue) firm.Kind = firmKind.Value;
+        }
 
         if (model.IsOrder && model.OrderState == null) model.OrderState = OrderStatus.Waiting;
 

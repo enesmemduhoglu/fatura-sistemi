@@ -16,3 +16,5 @@ obj/
 # İşletim sistemi
 Thumbs.db
 .DS_Store
+
+localhost_*.png
