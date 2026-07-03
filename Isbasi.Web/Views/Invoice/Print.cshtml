@@ -2,6 +2,8 @@
 @{
     Layout = null;
     var company = ViewBag.Company as CompanySettings;
+    string template = company?.PrintTemplate ?? "classic";   // classic | modern | plain
+    string accent = template == "plain" ? "#333333" : (company?.PrintAccentColor ?? "#e8112d");
     string typeTitle = Model.Type switch
     {
         InvoiceType.SalesWholesale => "SATIŞ FATURASI",
@@ -25,11 +27,11 @@
             padding: 8px 18px; border: none; border-radius: 4px; cursor: pointer;
             font-size: 13px; text-decoration: none; display: inline-block;
         }
-        .btn-print { background: #e8112d; color: #fff; }
+        .btn-print { background: @accent; color: #fff; }
         .btn-back { background: #6c757d; color: #fff; margin-right: 6px; }
         .invoice-box { max-width: 800px; margin: 0 auto; border: 1px solid #ddd; padding: 32px; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #e8112d; padding-bottom: 16px; margin-bottom: 20px; }
-        .company-name { font-size: 22px; font-weight: 700; color: #e8112d; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid @accent; padding-bottom: 16px; margin-bottom: 20px; }
+        .company-name { font-size: 22px; font-weight: 700; color: @accent; }
         .doc-title { text-align: right; }
         .doc-title h1 { font-size: 18px; color: #333; }
         .doc-title .no { font-size: 13px; color: #666; margin-top: 4px; }
@@ -45,13 +47,31 @@
         table.lines td { padding: 8px; border-bottom: 1px solid #eee; }
         .totals { margin-left: auto; width: 300px; }
         .totals .row { display: flex; justify-content: space-between; padding: 5px 8px; }
-        .totals .row.grand { border-top: 2px solid #e8112d; font-weight: 700; font-size: 15px; padding-top: 8px; margin-top: 4px; }
+        .totals .row.grand { border-top: 2px solid @accent; font-weight: 700; font-size: 15px; padding-top: 8px; margin-top: 4px; }
         .notes { margin-top: 24px; color: #666; font-size: 11px; }
+        .footer-note { margin-top: 28px; padding: 10px 12px; background: #f8f8f8; border-left: 3px solid @accent; color: #555; font-size: 11px; }
         .footer { margin-top: 40px; text-align: center; color: #aaa; font-size: 10px; border-top: 1px solid #eee; padding-top: 12px; }
+
+        /* Modern şablon: dolgulu başlık bandı ve vurgulu genel toplam */
+        .tpl-modern .header {
+            background: @accent; border-bottom: none; color: #fff;
+            margin: -32px -32px 20px; padding: 24px 32px 20px;
+        }
+        .tpl-modern .company-name, .tpl-modern .doc-title h1 { color: #fff; }
+        .tpl-modern .doc-title .no { color: rgba(255,255,255,.85); }
+        .tpl-modern .totals .row.grand { background: @accent; color: #fff; border-top: none; padding: 8px; border-radius: 3px; }
+
+        /* Sade şablon: ince çizgiler, mürekkep dostu */
+        .tpl-plain .header { border-bottom: 1px solid #333; }
+        .tpl-plain table.lines th { background: none; border-bottom: 1px solid #333; }
+        .tpl-plain .totals .row.grand { border-top: 1px solid #333; }
+        .tpl-plain .footer-note { background: none; border-left: 1px solid #333; }
+
         @@media print {
             .print-actions { display: none; }
             body { padding: 0; }
             .invoice-box { border: none; max-width: none; }
+            .tpl-modern .header { margin: 0 0 20px; border-radius: 3px; }
         }
     </style>
 </head>
@@ -61,7 +81,7 @@
         <button class="btn-print" onclick="window.print()">Yazdır / PDF</button>
     </div>
 
-    <div class="invoice-box">
+    <div class="invoice-box tpl-@template">
         <div class="header">
             <div>
                 <div class="company-name">@(company?.CompanyName ?? "Firmam")</div>
@@ -146,6 +166,11 @@
         @if (!string.IsNullOrEmpty(Model.Description))
         {
             <div class="notes"><strong>Açıklama:</strong> @Model.Description</div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(company?.PrintFooterNote))
+        {
+            <div class="footer-note">@company!.PrintFooterNote</div>
         }
 
         <div class="footer">

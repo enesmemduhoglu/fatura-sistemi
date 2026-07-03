@@ -35,4 +35,14 @@ public class CompanySettings
     [Display(Name = "E-Posta")]
     [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi girin.")]
     public string? Email { get; set; }
+
+    // Kağıt fatura şablonu: yazdırma sayfalarının görünümünü belirler
+    [Display(Name = "Şablon")]
+    public string PrintTemplate { get; set; } = "classic";   // classic | modern | plain
+
+    [Display(Name = "Tema Rengi")]
+    public string PrintAccentColor { get; set; } = "#e8112d";
+
+    [Display(Name = "Fatura Dipnotu")]
+    public string? PrintFooterNote { get; set; }
 }

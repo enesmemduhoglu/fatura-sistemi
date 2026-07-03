@@ -36,6 +36,38 @@ public class ManageController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // ---- Kağıt Fatura Şablonları ----
+
+    [HttpGet("templates")]
+    public async Task<IActionResult> Templates()
+    {
+        var settings = await _db.CompanySettings.FirstOrDefaultAsync() ?? new CompanySettings();
+        // Önizleme bağlantısı için en yeni fatura (sipariş hariç)
+        ViewBag.PreviewInvoiceId = await _db.Invoices.AsNoTracking()
+            .Where(i => i.Type != InvoiceType.SalesOrder && i.Type != InvoiceType.PurchaseOrder)
+            .OrderByDescending(i => i.Id)
+            .Select(i => (int?)i.Id)
+            .FirstOrDefaultAsync();
+        return View(settings);
+    }
+
+    [HttpPost("templates")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Templates(string printTemplate, string printAccentColor, string? printFooterNote)
+    {
+        var settings = await _db.CompanySettings.FirstOrDefaultAsync();
+        if (settings == null) return NotFound();
+
+        settings.PrintTemplate = printTemplate is "modern" or "plain" ? printTemplate : "classic";
+        settings.PrintAccentColor = System.Text.RegularExpressions.Regex.IsMatch(printAccentColor ?? "", "^#[0-9a-fA-F]{6}$")
+            ? printAccentColor! : "#e8112d";
+        settings.PrintFooterNote = string.IsNullOrWhiteSpace(printFooterNote) ? null : printFooterNote.Trim();
+        await _db.SaveChangesAsync();
+
+        TempData["Success"] = "Şablon ayarları kaydedildi.";
+        return RedirectToAction(nameof(Templates));
+    }
+
     // ---- Verileri Dışa Aktar ----
 
     [HttpGet("exportdata")]

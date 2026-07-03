@@ -1,0 +1,114 @@
+@model CompanySettings
+@{
+    ViewData["Title"] = "Kağıt Fatura Şablonları";
+    int? previewId = ViewBag.PreviewInvoiceId as int?;
+    var colors = new (string Hex, string Name)[]
+    {
+        ("#e8112d", "İşbaşı Kırmızı"),
+        ("#36a3f7", "Mavi"),
+        ("#34bfa3", "Yeşil"),
+        ("#8950fc", "Mor"),
+        ("#f59e0b", "Turuncu"),
+        ("#333333", "Antrasit")
+    };
+}
+
+<div class="page-header">
+    <h1 class="page-title">Kağıt Fatura Şablonları</h1>
+    @if (previewId.HasValue)
+    {
+        <a href="/invoice/print/@previewId" target="_blank" class="btn btn-cancel btn-sm"><i class="fas fa-eye me-1"></i> Son Faturayla Önizle</a>
+    }
+</div>
+
+<form method="post" action="/manage/templates">
+    @Html.AntiForgeryToken()
+
+    <div class="portlet">
+        <div class="portlet-title">Şablon</div>
+        <p class="text-muted small">Seçtiğiniz şablon tüm fatura ve makbuz çıktılarında kullanılır.</p>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="w-100 h-100" style="cursor:pointer">
+                    <div class="border rounded p-3 h-100 template-card">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-medium">Klasik</span>
+                            <input type="radio" name="printTemplate" value="classic" class="form-check-input"
+                                   checked="@(Model.PrintTemplate == "classic")">
+                        </div>
+                        <div class="border rounded overflow-hidden" style="height:110px;font-size:8px">
+                            <div style="padding:8px;border-bottom:3px solid #e8112d">
+                                <div style="color:#e8112d;font-weight:700;font-size:11px">FİRMAM</div>
+                                <div style="color:#999">Adres satırı</div>
+                            </div>
+                            <div style="padding:8px;color:#666">Alt çizgili başlık, beyaz zemin — mevcut görünüm.</div>
+                        </div>
+                    </div>
+                </label>
+            </div>
+            <div class="col-md-4">
+                <label class="w-100 h-100" style="cursor:pointer">
+                    <div class="border rounded p-3 h-100 template-card">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-medium">Modern</span>
+                            <input type="radio" name="printTemplate" value="modern" class="form-check-input"
+                                   checked="@(Model.PrintTemplate == "modern")">
+                        </div>
+                        <div class="border rounded overflow-hidden" style="height:110px;font-size:8px">
+                            <div style="padding:8px;background:#e8112d;color:#fff">
+                                <div style="font-weight:700;font-size:11px">FİRMAM</div>
+                                <div style="opacity:.85">Adres satırı</div>
+                            </div>
+                            <div style="padding:8px;color:#666">Dolgulu renkli başlık bandı, vurgulu toplam kutusu.</div>
+                        </div>
+                    </div>
+                </label>
+            </div>
+            <div class="col-md-4">
+                <label class="w-100 h-100" style="cursor:pointer">
+                    <div class="border rounded p-3 h-100 template-card">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-medium">Sade</span>
+                            <input type="radio" name="printTemplate" value="plain" class="form-check-input"
+                                   checked="@(Model.PrintTemplate == "plain")">
+                        </div>
+                        <div class="border rounded overflow-hidden" style="height:110px;font-size:8px">
+                            <div style="padding:8px;border-bottom:1px solid #333">
+                                <div style="color:#111;font-weight:700;font-size:11px">FİRMAM</div>
+                                <div style="color:#999">Adres satırı</div>
+                            </div>
+                            <div style="padding:8px;color:#666">Renksiz, mürekkep dostu; siyah-beyaz yazıcılar için.</div>
+                        </div>
+                    </div>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="portlet">
+        <div class="portlet-title">Tema Rengi</div>
+        <p class="text-muted small">Klasik ve Modern şablonlarda başlık ve vurgu rengi olarak kullanılır (Sade şablon rengi yok sayar).</p>
+        <div class="d-flex flex-wrap gap-3">
+            @foreach (var color in colors)
+            {
+                <label class="text-center" style="cursor:pointer">
+                    <input type="radio" name="printAccentColor" value="@color.Hex" class="form-check-input d-block mx-auto mb-1"
+                           checked="@(Model.PrintAccentColor.Equals(color.Hex, StringComparison.OrdinalIgnoreCase))">
+                    <span class="d-inline-block rounded" style="width:42px;height:28px;background:@color.Hex;border:1px solid #ddd"></span>
+                    <div class="small text-muted">@color.Name</div>
+                </label>
+            }
+        </div>
+    </div>
+
+    <div class="portlet">
+        <div class="portlet-title">Fatura Dipnotu</div>
+        <p class="text-muted small">Tüm fatura ve makbuz çıktılarının altında gösterilir (banka bilgileri, teşekkür notu, yasal ibare vb.).</p>
+        <textarea name="printFooterNote" class="form-control" rows="2"
+                  placeholder="Örn: Ödemelerinizi TR00 0000 0000 0000 0000 0000 00 IBAN numaralı hesabımıza yapabilirsiniz.">@Model.PrintFooterNote</textarea>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-save"><i class="fas fa-save me-1"></i> Kaydet</button>
+    </div>
+</form>
