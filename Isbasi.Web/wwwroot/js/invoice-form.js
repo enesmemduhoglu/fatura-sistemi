@@ -54,17 +54,39 @@
         return c === 'USD' ? '$' : c === 'EUR' ? '€' : '₺';
     }
 
-    function refreshCurrency() {
+    // Katalog fiyatları TL'dir; dövizli belgede satır fiyatı kura bölünerek yazılır
+    function docPrice(tlPrice) {
+        if (($('#currencySelect').val() || 'TL') === 'TL') return tlPrice;
+        var rate = parseTr($('#exchangeRateInput').val());
+        return rate > 0 ? round2(tlPrice / rate) : tlPrice;
+    }
+
+    // Döviz/kur değişince katalogdan seçilmiş satırların fiyatları yeniden çevrilir
+    // (serbest metin satırlarına dokunulmaz)
+    function repriceLines() {
+        $body.find('tr.line-row').each(function () {
+            var $row = $(this);
+            var productId = $row.find('.line-product-id').val();
+            var serviceId = $row.find('.line-service-id').val();
+            var key = productId ? 'p' + productId : (serviceId ? 's' + serviceId : null);
+            if (!key) return;
+            var item = config.items.find(function (i) { return i.key === key; });
+            if (item) $row.find('.line-price').val(fmtInput(docPrice(item.price)));
+        });
+    }
+
+    function refreshCurrency(reprice) {
         var currency = $('#currencySelect').val() || 'TL';
         var isTl = currency === 'TL';
         $('#rateRow').toggle(!isTl);
         if (isTl) $('#exchangeRateInput').val('1');
         $('#totalsCurrencyHeader').text('Tutar (' + currency + ')');
+        if (reprice) repriceLines();
         recalc();
     }
 
-    $('#currencySelect').on('change', refreshCurrency);
-    $('#exchangeRateInput').on('input', function () { recalc(); });
+    $('#currencySelect').on('change', function () { refreshCurrency(true); });
+    $('#exchangeRateInput').on('input', function () { repriceLines(); recalc(); });
 
     // ---- Vade günü butonları ----
     $('.due-buttons .btn').on('click', function () {
@@ -111,7 +133,7 @@
                 $row.find('.line-service-id').val(item.serviceId || '');
                 $row.find('.line-item-name').val(item.name);
                 $row.find('.line-unit').val(item.unit);
-                $row.find('.line-price').val(fmtInput(item.price));
+                $row.find('.line-price').val(fmtInput(docPrice(item.price)));
                 $row.find('.line-vat-rate').val(item.vatRate.toString());
             } else {
                 // serbest metin girişi
