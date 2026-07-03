@@ -73,7 +73,13 @@ public class InvoiceController : Controller
     // type: Gross = Toptan (KDV Hariç), Net = Perakende (KDV Dahil)
     [HttpGet("sales/edit")]
     public Task<IActionResult> EditSales(int? id, string type = "Gross")
-        => Edit(id, type == "Net" ? InvoiceType.SalesRetail : InvoiceType.SalesWholesale);
+    {
+        // Sorgudaki 'type' (Gross/Net) ModelState'e girer; hidden asp-for="Type"
+        // model yerine bu değeri basıp kayıtta "'Gross' is not valid" hatası üretir
+        ModelState.Remove("Type");
+        ModelState.Remove("type");
+        return Edit(id, type == "Net" ? InvoiceType.SalesRetail : InvoiceType.SalesWholesale);
+    }
 
     [HttpGet("purchase/edit")]
     public Task<IActionResult> EditPurchase(int? id)
