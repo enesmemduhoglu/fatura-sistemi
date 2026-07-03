@@ -79,24 +79,24 @@
                 </select>
                 <div class="mt-2 mb-1">
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="firmKind" id="firmCorporate" value="0">
+                        <input class="form-check-input" type="radio" name="firmKind" id="firmCorporate" disabled>
                         <label class="form-check-label" for="firmCorporate">Kurumsal</label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="firmKind" id="firmIndividual" value="1">
+                        <input class="form-check-input" type="radio" name="firmKind" id="firmIndividual" disabled>
                         <label class="form-check-label" for="firmIndividual">Bireysel</label>
                     </div>
                 </div>
-                @* Düzenlenen firma bilgileri kayıtta seçili firmanın kartına yazılır *@
-                <textarea id="firmAddress" name="firmAddress" class="form-control underline-input" rows="2" placeholder="Adres"></textarea>
-                <input id="firmCountry" name="firmCountry" class="form-control underline-input mt-2" placeholder="Ülke">
+                @* Firma bilgileri salt görüntülemedir; düzenleme Müşteri & Tedarikçi kartından yapılır *@
+                <textarea id="firmAddress" class="form-control underline-input" rows="2" placeholder="Adres" readonly></textarea>
+                <input id="firmCountry" class="form-control underline-input mt-2" placeholder="Ülke" readonly>
                 <div class="row g-2 mt-0">
-                    <div class="col-6"><input id="firmCity" name="firmCity" class="form-control underline-input" placeholder="İl"></div>
-                    <div class="col-6"><input id="firmDistrict" name="firmDistrict" class="form-control underline-input" placeholder="İlçe"></div>
+                    <div class="col-6"><input id="firmCity" class="form-control underline-input" placeholder="İl" readonly></div>
+                    <div class="col-6"><input id="firmDistrict" class="form-control underline-input" placeholder="İlçe" readonly></div>
                 </div>
                 <div class="row g-2 mt-0">
-                    <div class="col-6"><input id="firmTaxOffice" name="firmTaxOffice" class="form-control underline-input" placeholder="Vergi Dairesi"></div>
-                    <div class="col-6"><input id="firmTaxNumber" name="firmTaxNumber" class="form-control underline-input" placeholder="Vergi No/T.C. Kimlik No"></div>
+                    <div class="col-6"><input id="firmTaxOffice" class="form-control underline-input" placeholder="Vergi Dairesi" readonly></div>
+                    <div class="col-6"><input id="firmTaxNumber" class="form-control underline-input" placeholder="Vergi No/T.C. Kimlik No" readonly></div>
                 </div>
                 <div class="form-check mt-3">
                     <input class="form-check-input" type="checkbox" id="differentDelivery">
