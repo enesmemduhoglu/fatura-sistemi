@@ -1,0 +1,133 @@
+@model Cheque
+@{
+    bool isReceived = Model.Type == ChequeType.Received;
+    string typeTitle = isReceived ? "Alınan Çek" : "Verilen Çek";
+    string clearedLabel = isReceived ? "Tahsil Edildi" : "Ödendi";
+    ViewData["Title"] = Model.Id == 0 ? $"Yeni {typeTitle}" : $"{typeTitle} Düzenle";
+    var firms = (List<Firm>)ViewBag.Firms;
+    var safes = (List<Safe>)ViewBag.Safes;
+    var banks = (List<BankAccount>)ViewBag.Banks;
+    string listUrl = $"/cheque?kind={(isReceived ? "received" : "issued")}";
+}
+
+<div class="page-header">
+    <h1 class="page-title"><span class="breadcrumb-part"><a href="@listUrl" class="text-decoration-none">Çekler</a> &gt;</span> @ViewData["Title"]</h1>
+</div>
+
+<div class="portlet">
+    <form method="post" action="/cheque/save">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Type" />
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">@(isReceived ? "Müşteri" : "Tedarikçi") *</label>
+                <select asp-for="FirmId" class="form-select">
+                    <option value="">Seçin...</option>
+                    @foreach (var firm in firms)
+                    {
+                        <option value="@firm.Id" selected="@(firm.Id == Model.FirmId)">@firm.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="ChequeNumber"></label>
+                <input class="form-control" asp-for="ChequeNumber" />
+                <span asp-validation-for="ChequeNumber" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="BankName"></label>
+                <input class="form-control" asp-for="BankName" placeholder="Çekin bankası" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="IssueDate"></label>
+                <input type="date" class="form-control" asp-for="IssueDate" asp-format="{0:yyyy-MM-dd}" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="DueDate"></label>
+                <input type="date" class="form-control" asp-for="DueDate" asp-format="{0:yyyy-MM-dd}" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="Amount"></label>
+                <input class="form-control" asp-for="Amount" />
+                <span asp-validation-for="Amount" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="Status"></label>
+                <select asp-for="Status" class="form-select" id="statusSelect">
+                    <option value="Portfolio">Portföyde</option>
+                    <option value="Cleared">@clearedLabel</option>
+                    <option value="Bounced">Karşılıksız</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label" asp-for="Description"></label>
+                <input class="form-control" asp-for="Description" placeholder="İsteğe bağlı açıklama" />
+            </div>
+        </div>
+
+        <div id="clearedSection" class="row g-3 mt-1" style="display:none">
+            <div class="col-12"><hr class="mb-0" /></div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="ClearedDate">@(isReceived ? "Tahsil Tarihi" : "Ödeme Tarihi")</label>
+                <input type="date" class="form-control" asp-for="ClearedDate" asp-format="{0:yyyy-MM-dd}" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" asp-for="AccountType"></label>
+                <select asp-for="AccountType" class="form-select" id="accountTypeSelect">
+                    <option value="Safe">Kasa</option>
+                    <option value="Bank">Banka</option>
+                </select>
+            </div>
+            <div class="col-md-3" id="safeGroup">
+                <label class="form-label">Kasa</label>
+                <select asp-for="SafeId" class="form-select">
+                    <option value="">Seçin...</option>
+                    @foreach (var safe in safes)
+                    {
+                        <option value="@safe.Id" selected="@(safe.Id == Model.SafeId)">@safe.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3" id="bankGroup">
+                <label class="form-label">Banka Hesabı</label>
+                <select asp-for="BankAccountId" class="form-select">
+                    <option value="">Seçin...</option>
+                    @foreach (var bank in banks)
+                    {
+                        <option value="@bank.Id" selected="@(bank.Id == Model.BankAccountId)">@bank.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-save"><i class="fas fa-save me-1"></i> Kaydet</button>
+            <a href="@listUrl" class="btn btn-cancel"><i class="fas fa-times me-1"></i> Vazgeç</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    (function () {
+        var status = document.getElementById('statusSelect');
+        var section = document.getElementById('clearedSection');
+        var accountType = document.getElementById('accountTypeSelect');
+        var safeGroup = document.getElementById('safeGroup');
+        var bankGroup = document.getElementById('bankGroup');
+
+        function refresh() {
+            section.style.display = status.value === 'Cleared' ? '' : 'none';
+            var isSafe = accountType.value === 'Safe';
+            safeGroup.style.display = isSafe ? '' : 'none';
+            bankGroup.style.display = isSafe ? 'none' : '';
+        }
+        status.addEventListener('change', refresh);
+        accountType.addEventListener('change', refresh);
+        refresh();
+    })();
+</script>
+}

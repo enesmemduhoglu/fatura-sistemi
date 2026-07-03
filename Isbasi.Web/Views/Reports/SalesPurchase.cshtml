@@ -1,0 +1,57 @@
+@model SalesPurchaseViewModel
+@{
+    ViewData["Title"] = "Alış-Satış Toplamları";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Alış-Satış Toplamları</h1>
+    <form method="get" class="d-flex align-items-center gap-2">
+        <label class="form-label mb-0 small text-muted">Yıl</label>
+        <select name="year" class="form-select form-select-sm" style="width:100px" onchange="this.form.submit()">
+            @for (int y = DateTime.Today.Year; y >= DateTime.Today.Year - 4; y--)
+            {
+                <option value="@y" selected="@(y == Model.Year)">@y</option>
+            }
+        </select>
+    </form>
+</div>
+
+<div class="portlet">
+    <div class="portlet-title">@Model.Year Aylık Alış-Satış Karşılaştırması</div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Ay</th>
+                    <th class="text-end">Satış</th>
+                    <th class="text-end">Alış</th>
+                    <th class="text-end">Gider</th>
+                    <th class="text-end">Fark</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Months)
+                {
+                    bool empty = row.Sales == 0 && row.Purchases == 0 && row.Expenses == 0;
+                    <tr class="@(empty ? "text-muted" : "")">
+                        <td class="text-capitalize">@row.Month</td>
+                        <td class="text-end">@(empty ? "-" : row.Sales.ToString("N2"))</td>
+                        <td class="text-end">@(empty ? "-" : row.Purchases.ToString("N2"))</td>
+                        <td class="text-end">@(empty ? "-" : row.Expenses.ToString("N2"))</td>
+                        <td class="text-end fw-medium @(row.Difference < 0 ? "text-danger" : "")">@(empty ? "-" : row.Difference.ToString("N2"))</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold" style="background:#f7f8fa">
+                    <td>Toplam</td>
+                    <td class="text-end">@Model.TotalSales.ToString("N2")</td>
+                    <td class="text-end">@Model.TotalPurchases.ToString("N2")</td>
+                    <td class="text-end">@Model.TotalExpenses.ToString("N2")</td>
+                    <td class="text-end @(Model.TotalDifference < 0 ? "text-danger" : "")">@Model.TotalDifference.ToString("N2") ₺</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <div class="text-muted small">Satış: satış faturaları genel toplamı. Alış/Gider: alış ve gider faturaları genel toplamı. Siparişler dahil edilmez.</div>
+</div>

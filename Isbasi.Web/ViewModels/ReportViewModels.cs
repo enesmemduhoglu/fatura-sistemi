@@ -30,6 +30,47 @@ public class ReportSummaryViewModel
     public int TotalCount => Months.Sum(m => m.InvoiceCount);
 }
 
+public class SalesPurchaseMonthRow
+{
+    public string Month { get; set; } = "";
+    public decimal Sales { get; set; }      // satış faturaları genel toplamı
+    public decimal Purchases { get; set; }  // alış faturaları genel toplamı
+    public decimal Expenses { get; set; }   // gider faturaları genel toplamı
+    public decimal Difference => Sales - Purchases - Expenses;
+}
+
+public class SalesPurchaseViewModel
+{
+    public int Year { get; set; }
+    public List<SalesPurchaseMonthRow> Months { get; set; } = new();
+    public decimal TotalSales => Months.Sum(m => m.Sales);
+    public decimal TotalPurchases => Months.Sum(m => m.Purchases);
+    public decimal TotalExpenses => Months.Sum(m => m.Expenses);
+    public decimal TotalDifference => TotalSales - TotalPurchases - TotalExpenses;
+}
+
+public class OrderStatusRow
+{
+    public string Status { get; set; } = "";
+    public string BadgeClass { get; set; } = "status-open";
+    public int Count { get; set; }
+    public decimal Total { get; set; }
+}
+
+public class OrderStatusGroup
+{
+    public string Title { get; set; } = "";
+    public List<OrderStatusRow> Rows { get; set; } = new();
+    public int TotalCount => Rows.Sum(r => r.Count);
+    public decimal TotalAmount => Rows.Sum(r => r.Total);
+}
+
+public class OrderStatusViewModel
+{
+    public List<OrderStatusGroup> Groups { get; set; } = new();
+    public List<Isbasi.Web.Models.Invoice> Orders { get; set; } = new();
+}
+
 public class VatMonthRow
 {
     public string Month { get; set; } = "";

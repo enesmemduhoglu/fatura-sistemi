@@ -1,0 +1,92 @@
+@model OrderStatusViewModel
+@{
+    ViewData["Title"] = "Sipariş Durum Özeti";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Sipariş Durum Özeti Listesi</h1>
+</div>
+
+<div class="row g-4 mb-4">
+    @foreach (var group in Model.Groups)
+    {
+        <div class="col-lg-6">
+            <div class="portlet h-100">
+                <div class="portlet-title">@group.Title</div>
+                <table class="table align-middle mb-2">
+                    <thead>
+                        <tr>
+                            <th>Durum</th>
+                            <th class="text-end">Adet</th>
+                            <th class="text-end">Tutar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in group.Rows)
+                        {
+                            <tr class="@(row.Count == 0 ? "text-muted" : "")">
+                                <td><span class="status-badge @row.BadgeClass">@row.Status</span></td>
+                                <td class="text-end">@row.Count</td>
+                                <td class="text-end fw-medium">@row.Total.ToString("N2") ₺</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold" style="background:#f7f8fa">
+                            <td>Toplam</td>
+                            <td class="text-end">@group.TotalCount</td>
+                            <td class="text-end">@group.TotalAmount.ToString("N2") ₺</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="portlet">
+    <div class="portlet-title">Tüm Siparişler</div>
+    @if (Model.Orders.Count == 0)
+    {
+        <div class="text-muted text-center py-4">Henüz sipariş bulunmuyor.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Sipariş No</th>
+                        <th>Firma</th>
+                        <th>Sipariş Tipi</th>
+                        <th>Tarih</th>
+                        <th>Teslim Tarihi</th>
+                        <th class="text-end">Genel Toplam</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model.Orders)
+                    {
+                        string editUrl = order.Type == InvoiceType.PurchaseOrder
+                            ? $"/invoice/purchaseorders/edit?id={order.Id}"
+                            : $"/invoice/orders/edit?id={order.Id}";
+                        <tr>
+                            <td><a href="@editUrl" class="fw-medium text-decoration-none">@order.InvoiceNumber</a></td>
+                            <td>@order.Firm?.Name</td>
+                            <td>@(order.Type == InvoiceType.SalesOrder ? "Satış Siparişi" : "Alış Siparişi")</td>
+                            <td>@order.InvoiceDate.ToString("dd.MM.yyyy")</td>
+                            <td>@(order.DueDate?.ToString("dd.MM.yyyy") ?? "-")</td>
+                            <td class="text-end fw-medium">@order.GrandTotal.ToString("N2") ₺</td>
+                            <td>
+                                <span class="status-badge @(order.OrderState switch { OrderStatus.Invoiced => "status-paid", OrderStatus.Cancelled => "status-cancelled", _ => "status-open" })">
+                                    @(order.OrderState switch { OrderStatus.Invoiced => "Faturalandı", OrderStatus.Cancelled => "İptal", _ => "Bekliyor" })
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

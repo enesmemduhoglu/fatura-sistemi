@@ -10,7 +10,8 @@ public record CashBalances(Dictionary<int, decimal> SafeBalances, Dictionary<int
 }
 
 /// <summary>
-/// Güncel kasa/banka bakiyeleri: açılış bakiyesi + tahsilatlar (satış) − ödemeler (alış/gider).
+/// Güncel kasa/banka bakiyeleri: açılış bakiyesi + tahsilatlar (satış) − ödemeler (alış/gider)
+/// + tahsil edilen alınan çekler − ödenen verilen çekler.
 /// SQLite decimal üzerinde SQL Sum yapamadığı için toplamlar bellekte alınır.
 /// </summary>
 public static class CashBalanceCalculator
@@ -23,6 +24,10 @@ public static class CashBalanceCalculator
             .Include(p => p.Invoice)
             .Select(p => new { p.SafeId, p.BankAccountId, p.Amount, p.Invoice!.Type })
             .ToListAsync();
+        var clearedCheques = await db.Cheques.AsNoTracking()
+            .Where(c => c.Status == ChequeStatus.Cleared)
+            .Select(c => new { c.SafeId, c.BankAccountId, c.Amount, c.Type })
+            .ToListAsync();
 
         var safeBalances = safes.ToDictionary(s => s.Id, s => s.OpeningBalance);
         var bankBalances = banks.ToDictionary(b => b.Id, b => b.OpeningBalance);
@@ -30,14 +35,20 @@ public static class CashBalanceCalculator
         foreach (var payment in payments)
         {
             bool isIncoming = payment.Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail;
-            decimal delta = isIncoming ? payment.Amount : -payment.Amount;
-
-            if (payment.SafeId.HasValue && safeBalances.ContainsKey(payment.SafeId.Value))
-                safeBalances[payment.SafeId.Value] += delta;
-            else if (payment.BankAccountId.HasValue && bankBalances.ContainsKey(payment.BankAccountId.Value))
-                bankBalances[payment.BankAccountId.Value] += delta;
+            Apply(payment.SafeId, payment.BankAccountId, isIncoming ? payment.Amount : -payment.Amount);
         }
 
+        foreach (var cheque in clearedCheques)
+            Apply(cheque.SafeId, cheque.BankAccountId, cheque.Type == ChequeType.Received ? cheque.Amount : -cheque.Amount);
+
         return new CashBalances(safeBalances, bankBalances);
+
+        void Apply(int? safeId, int? bankAccountId, decimal delta)
+        {
+            if (safeId.HasValue && safeBalances.ContainsKey(safeId.Value))
+                safeBalances[safeId.Value] += delta;
+            else if (bankAccountId.HasValue && bankBalances.ContainsKey(bankAccountId.Value))
+                bankBalances[bankAccountId.Value] += delta;
+        }
     }
 }

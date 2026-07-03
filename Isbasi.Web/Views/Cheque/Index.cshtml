@@ -1,0 +1,103 @@
+@model List<Cheque>
+@{
+    string kind = (string)ViewBag.Kind;
+    bool isReceived = kind == "received";
+    ViewData["Title"] = "Çekler";
+    string? status = ViewBag.Status as string;
+    string clearedLabel = isReceived ? "Tahsil Edildi" : "Ödendi";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Çekler</h1>
+    <a href="/cheque/edit?kind=@kind" class="btn btn-isbasi"><i class="fas fa-plus me-1"></i> @(isReceived ? "Yeni Alınan Çek" : "Yeni Verilen Çek")</a>
+</div>
+
+<div class="portlet">
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item"><a class="nav-link @(isReceived ? "active text-success fw-medium" : "text-muted")" href="/cheque?kind=received">Alınan Çekler</a></li>
+        <li class="nav-item"><a class="nav-link @(!isReceived ? "active text-success fw-medium" : "text-muted")" href="/cheque?kind=issued">Verilen Çekler</a></li>
+    </ul>
+
+    <form method="get" class="row g-2 mb-3">
+        <input type="hidden" name="kind" value="@kind" />
+        <div class="col-md-2">
+            <select name="status" class="form-select" onchange="this.form.submit()">
+                <option value="" selected="@(string.IsNullOrEmpty(status))">Hepsi</option>
+                <option value="Portfolio" selected="@(status == "Portfolio")">Portföyde</option>
+                <option value="Cleared" selected="@(status == "Cleared")">@clearedLabel</option>
+                <option value="Bounced" selected="@(status == "Bounced")">Karşılıksız</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <input name="q" value="@ViewBag.Query" class="form-control" placeholder="Firma ya da çek no ile ara..." />
+                <button type="submit" class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+    </form>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="fas fa-money-check"></i>
+            <div class="title">Henüz çek bulunmuyor</div>
+            <div>@(isReceived ? "\"Yeni Alınan Çek\" butonu ile ilk çekinizi kaydedin." : "\"Yeni Verilen Çek\" butonu ile ilk çekinizi kaydedin.")</div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Çek No</th>
+                        <th>@(isReceived ? "Müşteri" : "Tedarikçi")</th>
+                        <th>Banka</th>
+                        <th>Düzenleme</th>
+                        <th>Vade</th>
+                        <th class="text-end">Tutar</th>
+                        <th>Durum</th>
+                        <th>Hesap</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cheque in Model)
+                    {
+                        bool overdue = cheque.Status == ChequeStatus.Portfolio && cheque.DueDate.Date < DateTime.Today;
+                        <tr>
+                            <td class="fw-medium">@cheque.ChequeNumber</td>
+                            <td>@cheque.Firm?.Name</td>
+                            <td>@(cheque.BankName ?? "-")</td>
+                            <td>@cheque.IssueDate.ToString("dd.MM.yyyy")</td>
+                            <td class="@(overdue ? "text-danger fw-medium" : "")">@cheque.DueDate.ToString("dd.MM.yyyy")</td>
+                            <td class="text-end fw-medium">@cheque.Amount.ToString("N2") ₺</td>
+                            <td>
+                                <span class="status-badge @(cheque.Status switch { ChequeStatus.Cleared => "status-paid", ChequeStatus.Bounced => "status-cancelled", _ => "status-open" })">
+                                    @(cheque.Status switch { ChequeStatus.Cleared => clearedLabel, ChequeStatus.Bounced => "Karşılıksız", _ => "Portföyde" })
+                                </span>
+                            </td>
+                            <td class="small text-muted">
+                                @(cheque.Status == ChequeStatus.Cleared
+                                    ? (cheque.Safe?.Name ?? cheque.BankAccount?.Name ?? "-")
+                                    : "-")
+                            </td>
+                            <td class="text-end">
+                                <a href="/cheque/edit?id=@cheque.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pen"></i></a>
+                                <form method="post" action="/cheque/delete/@cheque.Id" class="d-inline"
+                                      onsubmit="return confirm('@cheque.ChequeNumber numaralı çek silinsin mi?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="text-muted small">
+            Toplam @Model.Count çek — Portföyde: <strong>@Model.Where(c => c.Status == ChequeStatus.Portfolio).Sum(c => c.Amount).ToString("N2") ₺</strong>,
+            @clearedLabel: <strong>@Model.Where(c => c.Status == ChequeStatus.Cleared).Sum(c => c.Amount).ToString("N2") ₺</strong>
+        </div>
+    }
+</div>

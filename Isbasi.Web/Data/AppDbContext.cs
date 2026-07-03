@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<Safe> Safes => Set<Safe>();
     public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<Cheque> Cheques => Set<Cheque>();
     public DbSet<CompanySettings> CompanySettings => Set<CompanySettings>();
     public DbSet<User> Users => Set<User>();
 
@@ -49,6 +50,25 @@ public class AppDbContext : DbContext
             .HasOne(p => p.BankAccount)
             .WithMany()
             .HasForeignKey(p => p.BankAccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Çekin bağlı olduğu firma/kasa/banka silinirken hareket korunur
+        modelBuilder.Entity<Cheque>()
+            .HasOne(c => c.Firm)
+            .WithMany()
+            .HasForeignKey(c => c.FirmId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Cheque>()
+            .HasOne(c => c.Safe)
+            .WithMany()
+            .HasForeignKey(c => c.SafeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Cheque>()
+            .HasOne(c => c.BankAccount)
+            .WithMany()
+            .HasForeignKey(c => c.BankAccountId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

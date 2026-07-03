@@ -74,9 +74,12 @@ public class DefinitionsController : Controller
         if (firm == null) return NotFound();
 
         bool hasInvoices = await _db.Invoices.AnyAsync(i => i.FirmId == id);
-        if (hasInvoices)
+        bool hasCheques = await _db.Cheques.AnyAsync(c => c.FirmId == id);
+        if (hasInvoices || hasCheques)
         {
-            TempData["Error"] = "Bu firmaya ait faturalar olduğu için silinemez.";
+            TempData["Error"] = hasInvoices
+                ? "Bu firmaya ait faturalar olduğu için silinemez."
+                : "Bu firmaya ait çekler olduğu için silinemez.";
         }
         else
         {
@@ -177,10 +180,11 @@ public class DefinitionsController : Controller
         var safe = await _db.Safes.FindAsync(id);
         if (safe == null) return NotFound();
 
-        bool hasPayments = await _db.Payments.AnyAsync(p => p.SafeId == id);
+        bool hasPayments = await _db.Payments.AnyAsync(p => p.SafeId == id)
+            || await _db.Cheques.AnyAsync(c => c.SafeId == id);
         if (hasPayments)
         {
-            TempData["Error"] = "Bu kasada tahsilat/ödeme hareketi olduğu için silinemez.";
+            TempData["Error"] = "Bu kasada tahsilat/ödeme ya da çek hareketi olduğu için silinemez.";
         }
         else
         {
@@ -227,10 +231,11 @@ public class DefinitionsController : Controller
         var bank = await _db.BankAccounts.FindAsync(id);
         if (bank == null) return NotFound();
 
-        bool hasPayments = await _db.Payments.AnyAsync(p => p.BankAccountId == id);
+        bool hasPayments = await _db.Payments.AnyAsync(p => p.BankAccountId == id)
+            || await _db.Cheques.AnyAsync(c => c.BankAccountId == id);
         if (hasPayments)
         {
-            TempData["Error"] = "Bu hesapta tahsilat/ödeme hareketi olduğu için silinemez.";
+            TempData["Error"] = "Bu hesapta tahsilat/ödeme ya da çek hareketi olduğu için silinemez.";
         }
         else
         {

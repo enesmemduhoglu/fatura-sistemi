@@ -173,5 +173,32 @@ public static class SeedData
             });
         }
         db.SaveChanges();
+
+        // Örnek çekler: portföyde bekleyen, tahsil edilmiş ve verilen birer çek
+        db.Cheques.AddRange(
+            new Cheque
+            {
+                Type = ChequeType.Received, FirmId = firms[0].Id,
+                ChequeNumber = "0001234", BankName = "Ziraat Bankası",
+                IssueDate = DateTime.Today.AddDays(-20), DueDate = DateTime.Today.AddDays(25),
+                Amount = 15000, Status = ChequeStatus.Portfolio
+            },
+            new Cheque
+            {
+                Type = ChequeType.Received, FirmId = firms[1].Id,
+                ChequeNumber = "0005678", BankName = "İş Bankası",
+                IssueDate = DateTime.Today.AddDays(-45), DueDate = DateTime.Today.AddDays(-10),
+                Amount = 8500, Status = ChequeStatus.Cleared,
+                ClearedDate = DateTime.Today.AddDays(-10),
+                AccountType = PaymentAccountType.Bank, BankAccountId = bank.Id
+            },
+            new Cheque
+            {
+                Type = ChequeType.Issued, FirmId = firms[3].Id,
+                ChequeNumber = "0009012", BankName = "Garanti BBVA",
+                IssueDate = DateTime.Today.AddDays(-5), DueDate = DateTime.Today.AddDays(40),
+                Amount = 12000, Status = ChequeStatus.Portfolio
+            });
+        db.SaveChanges();
     }
 }
