@@ -72,7 +72,13 @@
                             </td>
                             <td class="text-end fw-medium @(isOut ? "text-danger" : "text-success")">@(isOut ? "-" : "+")@line.Quantity.ToString("0.##")</td>
                             <td>@line.Unit</td>
-                            <td class="text-end">@line.UnitPrice.ToString("N2") ₺</td>
+                            <td class="text-end">
+                                @line.UnitPrice.ToString("N2") @line.Invoice.CurrencySymbol
+                                @if (line.Invoice.Currency != "TL")
+                                {
+                                    <div class="small text-muted">@Math.Round(line.UnitPrice * line.Invoice.ExchangeRate, 2).ToString("N2") ₺</div>
+                                }
+                            </td>
                         </tr>
                     }
                 </tbody>

@@ -15,10 +15,15 @@ public class StockController : Controller
     [HttpGet("transactions")]
     public async Task<IActionResult> Transactions(int? productId, DateTime? start, DateTime? end)
     {
+        // Yalnızca stok hesabına giren belgeler (StockCalculator ile aynı küme):
+        // siparişler stok hareketi değildir, faturaya dönüştüğünde listelenir
         var query = _db.InvoiceLines.AsNoTracking()
             .Include(l => l.Product)
             .Include(l => l.Invoice)!.ThenInclude(i => i!.Firm)
-            .Where(l => l.ProductId != null && l.Invoice!.Type != InvoiceType.Expense);
+            .Where(l => l.ProductId != null
+                && (l.Invoice!.Type == InvoiceType.SalesWholesale
+                    || l.Invoice.Type == InvoiceType.SalesRetail
+                    || l.Invoice.Type == InvoiceType.Purchase));
 
         if (productId.HasValue) query = query.Where(l => l.ProductId == productId.Value);
         if (start.HasValue) query = query.Where(l => l.Invoice!.InvoiceDate >= start.Value);
