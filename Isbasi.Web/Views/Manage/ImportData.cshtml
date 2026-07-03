@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "Verileri İçe Aktar";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Verileri İçe Aktar</h1>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="portlet h-100">
+            <div class="portlet-title"><i class="fas fa-users me-2"></i>Müşteri & Tedarikçi</div>
+            <p class="text-muted small">
+                CSV dosyanız noktalı virgülle (;) ayrılmış olmalı. İlk sütun (Firma Ünvanı) zorunludur;
+                aynı ünvanla kayıtlı firmalar atlanır. Önce şablonu indirip doldurmanızı öneririz.
+            </p>
+            <a href="/manage/importtemplate/firms" class="btn btn-sm btn-outline-secondary mb-3">
+                <i class="fas fa-file-download me-1"></i> Şablonu İndir
+            </a>
+            <form method="post" action="/manage/importdata" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="dataset" value="firms" />
+                <div class="input-group">
+                    <input type="file" name="file" class="form-control" accept=".csv,text/csv" required />
+                    <button type="submit" class="btn btn-isbasi"><i class="fas fa-upload me-1"></i> İçe Aktar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="portlet h-100">
+            <div class="portlet-title"><i class="fas fa-barcode me-2"></i>Ürünler</div>
+            <p class="text-muted small">
+                CSV dosyanız noktalı virgülle (;) ayrılmış olmalı. Ürün Adı zorunludur; aynı ürün
+                kodu (kod yoksa ad) ile kayıtlı ürünler atlanır. Fiyatlar "1.234,56" ya da "1234.56"
+                biçiminde olabilir.
+            </p>
+            <a href="/manage/importtemplate/products" class="btn btn-sm btn-outline-secondary mb-3">
+                <i class="fas fa-file-download me-1"></i> Şablonu İndir
+            </a>
+            <form method="post" action="/manage/importdata" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="dataset" value="products" />
+                <div class="input-group">
+                    <input type="file" name="file" class="form-control" accept=".csv,text/csv" required />
+                    <button type="submit" class="btn btn-isbasi"><i class="fas fa-upload me-1"></i> İçe Aktar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

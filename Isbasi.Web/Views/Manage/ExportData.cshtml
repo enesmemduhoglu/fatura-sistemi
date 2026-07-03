@@ -1,0 +1,35 @@
+@{
+    ViewData["Title"] = "Verileri Dışa Aktar";
+    var datasets = new (string Key, string Title, string Icon, string Desc)[]
+    {
+        ("firms", "Müşteri & Tedarikçi", "fa-users", "Tüm firma kartları: ünvan, tip, adres, vergi ve iletişim bilgileri"),
+        ("products", "Ürünler", "fa-barcode", "Ürün kodu, birim, satış/alış fiyatı, KDV oranı ve açılış stoğu"),
+        ("services", "Hizmetler", "fa-concierge-bell", "Hizmet kodu, birim, fiyat ve KDV oranı"),
+        ("invoices", "Faturalar & Siparişler", "fa-file-invoice", "Tüm satış/alış/gider faturaları ve siparişler"),
+        ("payments", "Tahsilat & Ödemeler", "fa-money-bill", "Tüm tahsilat ve ödeme hareketleri, bağlı belge ve hesapla"),
+        ("cheques", "Çekler", "fa-money-check", "Alınan ve verilen çekler, vade ve durum bilgisiyle"),
+        ("receipts", "Serbest Meslek Makbuzları", "fa-file-invoice", "Verilen ve alınan makbuzlar; brüt, stopaj, KDV ve net tutarlar")
+    };
+}
+
+<div class="page-header">
+    <h1 class="page-title">Verileri Dışa Aktar</h1>
+</div>
+
+<div class="portlet">
+    <p class="text-muted mb-4">Verileriniz Türkçe Excel ile uyumlu CSV biçiminde (noktalı virgül ayraçlı, UTF-8) indirilir.</p>
+    <div class="row g-3">
+        @foreach (var d in datasets)
+        {
+            <div class="col-md-6 col-xl-4">
+                <div class="border rounded p-3 h-100 d-flex flex-column">
+                    <div class="fw-medium mb-1"><i class="fas @d.Icon me-2 text-muted"></i>@d.Title</div>
+                    <div class="text-muted small flex-grow-1 mb-3">@d.Desc</div>
+                    <a href="/manage/exportdata/@d.Key" class="btn btn-sm btn-isbasi align-self-start">
+                        <i class="fas fa-download me-1"></i> CSV İndir
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</div>
