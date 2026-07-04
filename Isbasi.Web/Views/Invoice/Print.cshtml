@@ -160,7 +160,15 @@
             {
                 <div class="row"><span>Toplam İndirim</span><span>-@Model.DiscountTotal.ToString("N2") @Model.CurrencySymbol</span></div>
             }
+            @if (Model.StopajTotal > 0)
+            {
+                <div class="row"><span>Stopaj (%@Model.StopajRate.ToString("0.##"))</span><span>-@Model.StopajTotal.ToString("N2") @Model.CurrencySymbol</span></div>
+            }
             <div class="row"><span>Toplam KDV</span><span>@Model.VatTotal.ToString("N2") @Model.CurrencySymbol</span></div>
+            @if (Model.TevkifatVatTotal > 0)
+            {
+                <div class="row"><span>KDV Tevkifatı (@Model.TevkifatCode)</span><span>-@Model.TevkifatVatTotal.ToString("N2") @Model.CurrencySymbol</span></div>
+            }
             <div class="row grand"><span>Genel Toplam</span><span>@Model.GrandTotal.ToString("N2") @Model.CurrencySymbol</span></div>
             @if (Model.Currency != "TL")
             {

@@ -47,6 +47,8 @@ public static class RecurringGenerator
                     DeliveryAddress = source.DeliveryAddress,
                     GeneralDiscountValue = source.GeneralDiscountValue,
                     GeneralDiscountType = source.GeneralDiscountType,
+                    StopajRate = source.StopajRate,
+                    TevkifatCode = source.TevkifatCode,
                     Lines = source.Lines.Select(l => new InvoiceLine
                     {
                         ProductId = l.ProductId,

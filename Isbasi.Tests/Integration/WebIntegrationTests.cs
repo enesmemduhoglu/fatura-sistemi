@@ -95,6 +95,37 @@ public class WebIntegrationTests : IClassFixture<IsbasiWebFactory>
     }
 
     [Fact]
+    public async Task StopajVeTevkifatliFatura_FormdanKaydedilir_NetTutarListelenir()
+    {
+        var client = await LoggedInClient();
+
+        var response = await client.PostFormAsync("/invoice/save", "/invoice/sales/edit?type=Gross", new()
+        {
+            ["Id"] = "0",
+            ["Type"] = "SalesWholesale",
+            ["Currency"] = "TL",
+            ["ExchangeRate"] = "1",
+            ["FirmId"] = "1",
+            ["InvoiceDate"] = "2026-07-04",
+            ["Status"] = "Open",
+            ["InvoiceNumber"] = "ENTG-STOPAJ-1",
+            ["StopajRate"] = "20",
+            ["TevkifatCode"] = "9/10",
+            ["Lines[0].ItemName"] = "Stopajlı Hizmet",
+            ["Lines[0].Quantity"] = "1",
+            ["Lines[0].Unit"] = "Adet",
+            ["Lines[0].UnitPrice"] = "1000",
+            ["Lines[0].VatRate"] = "20"
+        });
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+
+        // Genel toplam net ödenecek tutar: 1000 + 200 KDV − 200 stopaj − 180 tevkifat = 820
+        var list = await client.GetStringAsync("/invoice/sales");
+        Assert.Contains("ENTG-STOPAJ-1", list);
+        Assert.Contains("820,00", list);
+    }
+
+    [Fact]
     public async Task StokHareketleri_SiparisGostermez_DovizSimgesiDogru()
     {
         var client = await LoggedInClient();

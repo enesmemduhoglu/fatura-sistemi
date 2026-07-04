@@ -216,12 +216,27 @@
         var vatTotal = round2(vatSum * ratio);
         var total = round2(subTotal - generalDiscount);
 
+        // Stopaj: indirimli KDV hariç toplam üzerinden
+        var stopajRate = parseTr($('#stopajRate').val());
+        if (stopajRate < 0) stopajRate = 0;
+        if (stopajRate > 100) stopajRate = 100;
+        var stopajTotal = round2(total * stopajRate / 100);
+
+        // KDV tevkifatı: nihai KDV'nin kesir kadarı ödenecek tutardan düşülür
+        var code = $('#tevkifatCode').val() || '';
+        var parts = code.split('/');
+        var tevkifatVat = parts.length === 2
+            ? round2(vatTotal * parseInt(parts[0], 10) / parseInt(parts[1], 10))
+            : 0;
+
         var sym = currencySymbol();
-        var grand = round2(total + vatTotal);
+        var grand = round2(total + vatTotal - stopajTotal - tevkifatVat);
         $('#totalSub').text(fmt(round2(subTotal)) + ' ' + sym);
         $('#totalDiscount').text(fmt(round2(lineDiscountTotal + generalDiscount)) + ' ' + sym);
+        $('#totalStopaj').text(fmt(stopajTotal) + ' ' + sym);
         $('#totalNet').text(fmt(total) + ' ' + sym);
         $('#totalVat').text(fmt(vatTotal) + ' ' + sym);
+        $('#totalTevkifat').text('-' + fmt(tevkifatVat) + ' ' + sym);
         $('#totalGrand').text(fmt(grand) + ' ' + sym);
 
         // Dövizli belgede TL karşılığı satırı
@@ -237,6 +252,7 @@
 
     $body.on('input change', 'input, select', recalc);
     $('#generalDiscount, #generalDiscountType').on('input change', recalc);
+    $('#stopajRate, #tevkifatCode').on('input change', recalc);
 
     // Mevcut satırların select2'lerini kur, hiç satır yoksa boş satır ekle
     $body.find('tr.line-row').each(function () { initItemSelect($(this)); });

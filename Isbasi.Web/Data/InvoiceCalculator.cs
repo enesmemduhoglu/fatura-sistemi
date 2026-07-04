@@ -8,6 +8,16 @@ namespace Isbasi.Web.Data;
 /// </summary>
 public static class InvoiceCalculator
 {
+    // Geçerli KDV tevkifat oranları; kod UI'daki seçenek metniyle aynıdır
+    public static readonly string[] TevkifatCodes = { "2/10", "3/10", "4/10", "5/10", "7/10", "9/10", "10/10" };
+
+    private static (decimal Num, decimal Den) TevkifatFraction(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code) || Array.IndexOf(TevkifatCodes, code) < 0) return (0m, 1m);
+        var parts = code.Split('/');
+        return (decimal.Parse(parts[0]), decimal.Parse(parts[1]));
+    }
+
     public static void Calculate(Invoice invoice)
     {
         bool vatIncluded = invoice.Type == InvoiceType.SalesRetail;
@@ -53,9 +63,24 @@ public static class InvoiceCalculator
         decimal vatTotal = Math.Round(invoice.Lines.Sum(l => l.VatAmount) * ratio, 2);
         decimal total = subTotal - generalDiscount;
 
+        // Stopaj matrahı: indirimler düşülmüş KDV hariç toplam ("Toplam" satırı)
+        decimal stopajRate = Math.Clamp(invoice.StopajRate, 0m, 100m);
+        decimal stopajTotal = Math.Round(total * stopajRate / 100m, 2);
+
+        // KDV tevkifatı nihai KDV üzerinden kesilir; KDV toplamı tam kalır,
+        // tevkif edilen kısım ödenecek tutardan düşülür
+        var (num, den) = TevkifatFraction(invoice.TevkifatCode);
+        if (num == 0) invoice.TevkifatCode = "";
+        decimal tevkifatVat = Math.Round(vatTotal * num / den, 2);
+
+        invoice.StopajRate = stopajRate;
+        invoice.StopajTotal = stopajTotal;
+        invoice.TevkifatVatTotal = tevkifatVat;
         invoice.SubTotal = subTotal;
         invoice.DiscountTotal = lineDiscountTotal + generalDiscount;
         invoice.VatTotal = vatTotal;
-        invoice.GrandTotal = total + vatTotal;
+        // Genel Toplam = net ödenecek tutar (stopaj ve tevkif edilen KDV düşülmüş);
+        // ödeme takibi (RemainingTotal, Ödendi durumu) bu tutar üzerinden yürür
+        invoice.GrandTotal = total + vatTotal - stopajTotal - tevkifatVat;
     }
 }

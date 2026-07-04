@@ -311,6 +311,8 @@ public class InvoiceController : Controller
             DeliveryAddress = source.DeliveryAddress,
             GeneralDiscountValue = source.GeneralDiscountValue,
             GeneralDiscountType = source.GeneralDiscountType,
+            StopajRate = source.StopajRate,
+            TevkifatCode = source.TevkifatCode,
             OrderState = source.IsOrder ? OrderStatus.Waiting : null,
             Lines = source.Lines.Select(l => new InvoiceLine
             {
@@ -357,6 +359,8 @@ public class InvoiceController : Controller
             Description = $"{order.InvoiceNumber} numaralı siparişten oluşturuldu. {order.Description}".Trim(),
             GeneralDiscountValue = order.GeneralDiscountValue,
             GeneralDiscountType = order.GeneralDiscountType,
+            StopajRate = order.StopajRate,
+            TevkifatCode = order.TevkifatCode,
             Lines = order.Lines.Select(l => new InvoiceLine
             {
                 ProductId = l.ProductId,

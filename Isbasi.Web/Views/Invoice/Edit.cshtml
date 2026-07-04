@@ -286,9 +286,30 @@
                         </span>
                     </div>
                     <div class="row-line"><span>Toplam İndirim</span><span id="totalDiscount">0,00 ₺</span></div>
-                    <div class="row-line"><span>Stopaj Toplamı</span><span>0,00 ₺</span></div>
+                    <div class="row-line">
+                        <span>Stopaj Oranı (%)</span>
+                        <span>
+                            <input class="form-control form-control-sm text-end" style="width:90px"
+                                   name="StopajRate" id="stopajRate"
+                                   value="@Model.StopajRate.ToString("0.##")" inputmode="decimal">
+                        </span>
+                    </div>
+                    <div class="row-line"><span>Stopaj Toplamı</span><span id="totalStopaj">0,00 ₺</span></div>
                     <div class="row-line"><span>Toplam</span><span id="totalNet">0,00 ₺</span></div>
                     <div class="row-line"><span>Toplam KDV Tutarı</span><span id="totalVat">0,00 ₺</span></div>
+                    <div class="row-line">
+                        <span>KDV Tevkifatı</span>
+                        <span>
+                            <select class="form-select form-select-sm" style="width:110px" name="TevkifatCode" id="tevkifatCode">
+                                <option value="">Yok</option>
+                                @foreach (var code in Isbasi.Web.Data.InvoiceCalculator.TevkifatCodes)
+                                {
+                                    <option value="@code" selected="@(Model.TevkifatCode == code)">@code</option>
+                                }
+                            </select>
+                        </span>
+                    </div>
+                    <div class="row-line"><span>Tevkif Edilen KDV</span><span id="totalTevkifat">-0,00 ₺</span></div>
                     <div class="row-line grand"><span>Genel Toplam</span><span id="totalGrand">0,00 ₺</span></div>
                     <div class="row-line" id="tryRow" style="display:none"><span>TL Karşılığı</span><span id="totalTry">0,00 ₺</span></div>
                 </div>

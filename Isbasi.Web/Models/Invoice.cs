@@ -80,6 +80,22 @@ public class Invoice
     public decimal GeneralDiscountValue { get; set; }
     public DiscountType GeneralDiscountType { get; set; } = DiscountType.Rate;
 
+    // Stopaj: indirimler düşülmüş KDV hariç toplam üzerinden kesilir
+    [Display(Name = "Stopaj Oranı (%)")]
+    [Range(0, 100, ErrorMessage = "Stopaj oranı 0-100 arasında olmalıdır.")]
+    public decimal StopajRate { get; set; }
+
+    [Display(Name = "Stopaj Toplamı")]
+    public decimal StopajTotal { get; set; }
+
+    // KDV tevkifatı: "9/10" gibi kesir kodu, boş = tevkifat yok
+    [Display(Name = "KDV Tevkifatı")]
+    [DisplayFormat(ConvertEmptyStringToNull = false)]
+    public string TevkifatCode { get; set; } = "";
+
+    [Display(Name = "Tevkif Edilen KDV")]
+    public decimal TevkifatVatTotal { get; set; }
+
     [Display(Name = "Ara Toplam")]
     public decimal SubTotal { get; set; }
 
@@ -104,6 +120,8 @@ public class Invoice
 
     public decimal GrandTotalTry => Math.Round(GrandTotal * ExchangeRate, 2);
     public decimal VatTotalTry => Math.Round(VatTotal * ExchangeRate, 2);
+    public decimal StopajTotalTry => Math.Round(StopajTotal * ExchangeRate, 2);
+    public decimal TevkifatVatTotalTry => Math.Round(TevkifatVatTotal * ExchangeRate, 2);
     public string CurrencySymbol => Currency switch { "USD" => "$", "EUR" => "€", _ => "₺" };
 
     // Tahsilat/ödemeler her zaman TL girilir; kalan da TL karşılığı üzerinden izlenir
