@@ -110,6 +110,7 @@ public class Invoice
 
     public List<InvoiceLine> Lines { get; set; } = new();
     public List<Payment> Payments { get; set; } = new();
+    public List<InvoiceAttachment> Attachments { get; set; } = new();
 
     // Sipariş belgeleri için: durum ve dönüştürüldüğü fatura
     public OrderStatus? OrderState { get; set; }

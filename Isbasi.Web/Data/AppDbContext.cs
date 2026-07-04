@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<Cheque> Cheques => Set<Cheque>();
     public DbSet<FreelanceReceipt> FreelanceReceipts => Set<FreelanceReceipt>();
     public DbSet<RecurringPlan> RecurringPlans => Set<RecurringPlan>();
+    public DbSet<InvoiceAttachment> InvoiceAttachments => Set<InvoiceAttachment>();
     public DbSet<CompanySettings> CompanySettings => Set<CompanySettings>();
     public DbSet<User> Users => Set<User>();
 
@@ -34,6 +35,12 @@ public class AppDbContext : DbContext
             .WithMany(f => f.Invoices)
             .HasForeignKey(i => i.FirmId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Invoice>()
+            .HasMany(i => i.Attachments)
+            .WithOne(a => a.Invoice)
+            .HasForeignKey(a => a.InvoiceId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Invoice>()
             .HasMany(i => i.Payments)

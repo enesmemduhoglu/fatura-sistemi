@@ -56,7 +56,14 @@
             {
                 <a href="/invoice/print/@Model.Id" target="_blank" class="btn btn-cancel btn-sm"><i class="fas fa-print me-1"></i> Yazdır</a>
             }
-            <button type="button" class="btn btn-file btn-sm" onclick="alert('Dosya ekleme bu sürümde henüz yok.')"><i class="fas fa-image me-1"></i> Dosya Ekle</button>
+            @if (Model.Id != 0)
+            {
+                <button type="button" class="btn btn-file btn-sm" onclick="document.getElementById('attachmentFile').click()"><i class="fas fa-paperclip me-1"></i> Dosya Ekle</button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-file btn-sm" onclick="alert('Dosya eklemek için önce belgeyi kaydedin.')"><i class="fas fa-paperclip me-1"></i> Dosya Ekle</button>
+            }
             <button type="submit" name="submitAction" value="saveAndNew" class="btn btn-save-new btn-sm"><i class="fas fa-save me-1"></i> Kaydet ve Yeni Ekle</button>
             <button type="submit" name="submitAction" value="save" class="btn btn-save btn-sm"><i class="fas fa-save me-1"></i> Kaydet</button>
             <a href="@listUrl" class="btn btn-cancel btn-sm"><i class="fas fa-times me-1"></i> Vazgeç</a>
@@ -317,6 +324,58 @@
         </div>
     </div>
 </form>
+
+@if (Model.Id != 0)
+{
+    <!-- Ekler ana formun dışında ayrı formlarla yönetilir (iç içe form olmaz) -->
+    <form method="post" action="/invoice/attachments/upload/@Model.Id" enctype="multipart/form-data"
+          id="attachmentForm" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="file" id="attachmentFile" name="file"
+               accept="@string.Join(",", Isbasi.Web.Data.AttachmentStorage.AllowedExtensions)"
+               onchange="if (this.files.length) document.getElementById('attachmentForm').submit();">
+    </form>
+
+    <div class="portlet mt-3">
+        <h5 class="mb-3"><i class="fas fa-paperclip me-1"></i> Ekli Dosyalar (@Model.Attachments.Count)</h5>
+        @if (Model.Attachments.Count == 0)
+        {
+            <div class="text-muted">Henüz dosya eklenmedi. Sağ üstteki "Dosya Ekle" ile belge ekleyebilirsiniz (PDF, resim, Office, CSV, TXT, ZIP; en çok 10 MB).</div>
+        }
+        else
+        {
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>Dosya</th><th>Boyut</th><th>Eklenme</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var attachment in Model.Attachments.OrderByDescending(a => a.Id))
+                {
+                    <tr>
+                        <td><a href="/invoice/attachments/download/@attachment.Id"><i class="fas fa-download me-1"></i>@attachment.FileName</a></td>
+                        <td>@FormatSize(attachment.Size)</td>
+                        <td>@attachment.UploadedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td class="text-end">
+                            <form method="post" action="/invoice/attachments/delete/@attachment.Id" class="d-inline"
+                                  onsubmit="return confirm('@attachment.FileName silinsin mi?');">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+}
+
+@functions {
+    static string FormatSize(long bytes) => bytes switch
+    {
+        >= 1024 * 1024 => $"{bytes / (1024.0 * 1024):0.#} MB",
+        >= 1024 => $"{bytes / 1024.0:0.#} KB",
+        _ => $"{bytes} B"
+    };
+}
 
 <!-- Yeni satır şablonu (name'ler JS ile indekslenir) -->
 <template id="lineTemplate">

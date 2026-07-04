@@ -18,10 +18,15 @@ public sealed class IsbasiWebFactory : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
 
+    /// <summary>Ek dosyaları gerçek App_Data yerine teste özel geçici klasöre yazılır.</summary>
+    public string AttachmentsRoot { get; } =
+        Path.Combine(Path.GetTempPath(), "isbasi-test-attachments-" + Guid.NewGuid().ToString("N"));
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         _connection.Open();
         builder.UseEnvironment("Development");
+        builder.UseSetting("Attachments:Root", AttachmentsRoot);
         builder.ConfigureServices(services =>
         {
             var descriptor = services.Single(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
@@ -34,6 +39,8 @@ public sealed class IsbasiWebFactory : WebApplicationFactory<Program>
     {
         base.Dispose(disposing);
         _connection.Dispose();
+        if (Directory.Exists(AttachmentsRoot))
+            Directory.Delete(AttachmentsRoot, recursive: true);
     }
 }
 

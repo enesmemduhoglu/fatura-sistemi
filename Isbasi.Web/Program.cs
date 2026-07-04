@@ -12,6 +12,7 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AuthorizeFilter()));
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+builder.Services.AddSingleton<AttachmentStorage>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

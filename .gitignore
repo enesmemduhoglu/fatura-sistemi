@@ -13,6 +13,9 @@ obj/
 *.db-shm
 *.db-wal
 
+# Fatura eki dosyaları (yerel veri)
+Isbasi.Web/App_Data/
+
 # İşletim sistemi
 Thumbs.db
 .DS_Store

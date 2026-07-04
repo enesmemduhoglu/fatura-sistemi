@@ -104,6 +104,7 @@ public class InvoiceController : Controller
         {
             var existing = await _db.Invoices.AsNoTracking()
                 .Include(i => i.Lines)
+                .Include(i => i.Attachments)
                 .FirstOrDefaultAsync(i => i.Id == id.Value);
             if (existing == null) return NotFound();
             invoice = existing;
@@ -269,17 +270,94 @@ public class InvoiceController : Controller
 
     [HttpPost("delete/{id:int}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, [FromServices] AttachmentStorage storage)
     {
-        var invoice = await _db.Invoices.FindAsync(id);
+        var invoice = await _db.Invoices
+            .Include(i => i.Attachments)
+            .FirstOrDefaultAsync(i => i.Id == id);
         if (invoice == null) return NotFound();
 
         var type = invoice.Type;
         _db.Invoices.Remove(invoice);
         await _db.SaveChangesAsync();
+
+        // Kayıtlar cascade silindi; fiziksel dosyalar ancak burada temizlenebilir
+        foreach (var attachment in invoice.Attachments)
+            storage.Delete(attachment.StoredName);
+
         TempData["Success"] = "Fatura silindi.";
         return RedirectToList(type);
     }
+
+    [HttpPost("attachments/upload/{invoiceId:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadAttachment(int invoiceId, IFormFile? file,
+        [FromServices] AttachmentStorage storage)
+    {
+        var invoice = await _db.Invoices.FindAsync(invoiceId);
+        if (invoice == null) return NotFound();
+
+        if (file == null || file.Length == 0)
+            TempData["Error"] = "Yüklenecek dosya seçilmedi.";
+        else if (file.Length > AttachmentStorage.MaxSize)
+            TempData["Error"] = "Dosya boyutu 10 MB'yi aşamaz.";
+        else if (!AttachmentStorage.IsAllowed(file.FileName))
+            TempData["Error"] = "Bu dosya türüne izin verilmiyor. (PDF, resim, Office, CSV, TXT, ZIP)";
+        else
+        {
+            _db.InvoiceAttachments.Add(new InvoiceAttachment
+            {
+                InvoiceId = invoice.Id,
+                FileName = Path.GetFileName(file.FileName),
+                StoredName = await storage.SaveAsync(file),
+                ContentType = string.IsNullOrWhiteSpace(file.ContentType)
+                    ? "application/octet-stream" : file.ContentType,
+                Size = file.Length
+            });
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Dosya eklendi.";
+        }
+        return Redirect(EditUrl(invoice));
+    }
+
+    [HttpGet("attachments/download/{id:int}")]
+    public async Task<IActionResult> DownloadAttachment(int id, [FromServices] AttachmentStorage storage)
+    {
+        var attachment = await _db.InvoiceAttachments.FindAsync(id);
+        if (attachment == null) return NotFound();
+
+        string path = storage.PathFor(attachment.StoredName);
+        if (!System.IO.File.Exists(path)) return NotFound();
+        return PhysicalFile(path, attachment.ContentType, attachment.FileName);
+    }
+
+    [HttpPost("attachments/delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAttachment(int id, [FromServices] AttachmentStorage storage)
+    {
+        var attachment = await _db.InvoiceAttachments
+            .Include(a => a.Invoice)
+            .FirstOrDefaultAsync(a => a.Id == id);
+        if (attachment == null) return NotFound();
+
+        _db.InvoiceAttachments.Remove(attachment);
+        await _db.SaveChangesAsync();
+        storage.Delete(attachment.StoredName);
+
+        TempData["Success"] = "Dosya silindi.";
+        return Redirect(EditUrl(attachment.Invoice!));
+    }
+
+    // Ek işlemleri sonrası belgeye, kendi türünün düzenleme sayfasına dönülür
+    private static string EditUrl(Invoice invoice) => invoice.Type switch
+    {
+        InvoiceType.Purchase => $"/invoice/purchase/edit?id={invoice.Id}",
+        InvoiceType.Expense => $"/invoice/purchaseservices/edit?id={invoice.Id}",
+        InvoiceType.SalesOrder => $"/invoice/orders/edit?id={invoice.Id}",
+        InvoiceType.PurchaseOrder => $"/invoice/purchaseorders/edit?id={invoice.Id}",
+        InvoiceType.SalesRetail => $"/invoice/sales/edit?id={invoice.Id}&type=Net",
+        _ => $"/invoice/sales/edit?id={invoice.Id}"
+    };
 
     private IActionResult RedirectToList(InvoiceType type) => type switch
     {
