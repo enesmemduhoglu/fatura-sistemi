@@ -32,6 +32,8 @@ curl -s -b jar.txt -c jar.txt -X POST http://localhost:5210/account/login \
 
 ## Tuzaklar
 
+- Giriş yapılmış sayfalarda İKİ antiforgery alanı olabilir (layout'taki çıkış formu + sayfa formu); token çekerken `head -1` kullan, yoksa iki değer birleşip bozuk token gönderilir (400).
+
 - Razor, Türkçe karakterleri HTML entity yazar (`Ç` → `&#xC7;`); yanıt gövdesinde Türkçe metin ararken entity biçimini de ara ya da decode et.
 - Giriş denemeleri e-posta başına kilitlenir (5 hata / 15 dk). Prob için gerçek kullanıcı e-postasını değil sahte bir e-posta kullan; gerçek hesabı kilitleme.
 - Gerçek DB'ye veri yazan akışları (fatura kaydet, ek yükle) canlıda sürme; entegrasyon testleri (SQLite in-memory, gerçek HTTP boru hattı) bu akışları kapsıyor.

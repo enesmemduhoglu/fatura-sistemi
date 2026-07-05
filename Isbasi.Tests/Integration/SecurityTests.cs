@@ -73,6 +73,27 @@ public class SecurityTests : IClassFixture<IsbasiWebFactory>
             WebUtility.HtmlDecode(await blocked.Content.ReadAsStringAsync()));
     }
 
+    [Theory]
+    [InlineData("kisa1a7", "en az 8 karakter")]          // 7 karakter
+    [InlineData("harflerrr", "bir harf ve bir rakam")]   // rakam yok
+    [InlineData("12345678", "bir harf ve bir rakam")]    // harf yok
+    public async Task ZayifYeniParola_Reddedilir(string newPassword, string expectedError)
+    {
+        var client = Client();
+        await client.LoginAsync();
+
+        var response = await client.PostFormAsync("/account/changepassword", "/account/changepassword", new()
+        {
+            ["currentPassword"] = "enes123",
+            ["newPassword"] = newPassword,
+            ["newPasswordConfirm"] = newPassword
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);   // hata mesajıyla form yeniden gösterilir
+        Assert.Contains(expectedError,
+            WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync()));
+    }
+
     [Fact]
     public async Task KilitBaskaEpostayi_Etkilemez()
     {

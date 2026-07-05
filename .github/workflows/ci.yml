@@ -19,3 +19,13 @@ jobs:
 
       - name: Testleri çalıştır
         run: dotnet test Isbasi.Tests --configuration Release --nologo
+
+      - name: Bağımlılık zafiyet taraması
+        run: |
+          dotnet restore isbasi.sln
+          dotnet list isbasi.sln package --vulnerable --include-transitive | tee vulnerable.txt
+          # Zafiyet satırları önem derecesi içerir; bulunursa iş başarısız olur
+          if grep -qiE '\b(critical|high|moderate|low)\b' vulnerable.txt; then
+            echo "Zafiyetli paket bulundu; yukarıdaki listeye bakın."
+            exit 1
+          fi

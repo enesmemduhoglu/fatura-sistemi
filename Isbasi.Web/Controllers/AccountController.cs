@@ -98,8 +98,10 @@ public class AccountController : Controller
 
         if (!PasswordHasher.Verify(currentPassword ?? "", user.PasswordHash))
             ViewBag.Error = "Mevcut parolanız hatalı.";
-        else if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
-            ViewBag.Error = "Yeni parola en az 6 karakter olmalıdır.";
+        else if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+            ViewBag.Error = "Yeni parola en az 8 karakter olmalıdır.";
+        else if (!newPassword.Any(char.IsLetter) || !newPassword.Any(char.IsDigit))
+            ViewBag.Error = "Yeni parola en az bir harf ve bir rakam içermelidir.";
         else if (newPassword != newPasswordConfirm)
             ViewBag.Error = "Yeni parolalar birbiriyle uyuşmuyor.";
 

@@ -24,6 +24,9 @@ public sealed class IsbasiWebFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Geliştiricinin .env dosyasındaki SEED_USER_PASSWORD test seed'ini etkilemesin;
+        // Program.cs .env'i NoClobber yüklediğinden buradaki değer kazanır
+        Environment.SetEnvironmentVariable("SEED_USER_PASSWORD", "enes123");
         _connection.Open();
         builder.UseEnvironment("Development");
         builder.UseSetting("Attachments:Root", AttachmentsRoot);

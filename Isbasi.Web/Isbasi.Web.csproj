@@ -15,6 +15,10 @@
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
     <PackageReference Include="QuestPDF" Version="2026.6.1" />
+    <!-- Geçişli bağımlılıklardan gelen zafiyetli 4.3.0 sürümlerini yamalı sürüme sabitler
+         (CI'daki "dotnet list package - -vulnerable" taraması bunları yakalamıştı) -->
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 
   <ItemGroup>

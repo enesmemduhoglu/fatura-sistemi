@@ -11,8 +11,9 @@ using Microsoft.EntityFrameworkCore;
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // Veritabanı bilgileri .env dosyasından gelir (çalışma dizininden yukarı doğru aranır;
-// dosya yoksa sessiz geçer — testler ve ortam değişkeniyle çalışan ortamlar için)
-DotNetEnv.Env.TraversePath().Load();
+// dosya yoksa sessiz geçer). NoClobber: gerçek ortam değişkeni .env'deki değeri ezer —
+// testler bu sayede geliştiricinin .env'inden bağımsız değer sabitleyebilir
+DotNetEnv.Env.TraversePath().NoClobber().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
