@@ -19,6 +19,9 @@ public sealed class IsbasiWebFactory : WebApplicationFactory<Program>
     /// <summary>Test seed kullanıcısının parolası; gerçek kurulum parolasıyla ilgisi yoktur.</summary>
     public const string SeedPassword = "TestParola1";
 
+    /// <summary>Seed kullanıcısının e-postası (SeedData.cs ile aynı tutulmalı).</summary>
+    public const string SeedEmail = "demo@yildizticaret.com";
+
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
 
     /// <summary>Ek dosyaları gerçek App_Data yerine teste özel geçici klasöre yazılır.</summary>
@@ -69,7 +72,7 @@ public static class HttpClientExtensions
         var token = await client.GetAntiforgeryToken("/account/login");
         var response = await client.PostAsync("/account/login", new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            ["email"] = "eneshan034@gmail.com",
+            ["email"] = IsbasiWebFactory.SeedEmail,
             ["password"] = IsbasiWebFactory.SeedPassword,
             ["__RequestVerificationToken"] = token
         }));

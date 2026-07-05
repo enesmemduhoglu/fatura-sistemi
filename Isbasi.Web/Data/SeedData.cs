@@ -10,9 +10,9 @@ public static class SeedData
         {
             db.CompanySettings.Add(new CompanySettings
             {
-                CompanyName = "Enes",
-                OwnerName = "Enes",
-                Email = "eneshan034@gmail.com",
+                CompanyName = "Yıldız Ticaret Ltd. Şti.",
+                OwnerName = "Ali Yıldız",
+                Email = "demo@yildizticaret.com",
                 City = "İstanbul"
             });
             db.SaveChanges();
@@ -31,8 +31,8 @@ public static class SeedData
 
             db.Users.Add(new User
             {
-                Email = "eneshan034@gmail.com",
-                DisplayName = "Enes",
+                Email = "demo@yildizticaret.com",
+                DisplayName = "Ali Yıldız",
                 PasswordHash = PasswordHasher.Hash(seedPassword)
             });
             db.SaveChanges();

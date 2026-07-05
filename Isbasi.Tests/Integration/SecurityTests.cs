@@ -55,7 +55,7 @@ public class SecurityTests : IClassFixture<IsbasiWebFactory>
         {
             var attempt = await client.PostFormAsync("/account/login", "/account/login", new()
             {
-                ["email"] = "eneshan034@gmail.com",
+                ["email"] = IsbasiWebFactory.SeedEmail,
                 ["password"] = "yanlis-parola"
             });
             Assert.Equal(HttpStatusCode.OK, attempt.StatusCode);   // hata mesajıyla sayfa döner
@@ -63,7 +63,7 @@ public class SecurityTests : IClassFixture<IsbasiWebFactory>
 
         var blocked = await client.PostFormAsync("/account/login", "/account/login", new()
         {
-            ["email"] = "eneshan034@gmail.com",
+            ["email"] = IsbasiWebFactory.SeedEmail,
             ["password"] = IsbasiWebFactory.SeedPassword   // doğru parola dahi kabul edilmez
         });
 

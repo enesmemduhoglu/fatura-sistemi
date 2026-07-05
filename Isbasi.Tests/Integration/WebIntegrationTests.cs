@@ -41,7 +41,7 @@ public class WebIntegrationTests : IClassFixture<IsbasiWebFactory>
         var client = Client();
         var response = await client.PostFormAsync("/account/login", "/account/login", new()
         {
-            ["email"] = "eneshan034@gmail.com",
+            ["email"] = IsbasiWebFactory.SeedEmail,
             ["password"] = "yanlis-parola"
         });
 
