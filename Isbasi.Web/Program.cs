@@ -9,13 +9,29 @@ using Microsoft.EntityFrameworkCore;
 // eski davranış (timestamp without time zone) korunur
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
+// Veritabanı bilgileri .env dosyasından gelir (çalışma dizininden yukarı doğru aranır;
+// dosya yoksa sessiz geçer — testler ve ortam değişkeniyle çalışan ortamlar için)
+DotNetEnv.Env.TraversePath().Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Tüm sayfalar giriş ister; Account controller'ı [AllowAnonymous] ile açılır
 builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AuthorizeFilter()));
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+// DB_* değişkenleri (.env ya da ortam) öncelikli; yoksa appsettings ConnectionStrings:Default
+string? connectionString = builder.Configuration.GetConnectionString("Default");
+string? dbHost = Environment.GetEnvironmentVariable("DB_HOST");
+if (!string.IsNullOrWhiteSpace(dbHost))
+{
+    connectionString =
+        $"Host={dbHost};" +
+        $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
+        $"Database={Environment.GetEnvironmentVariable("DB_NAME") ?? "isbasi"};" +
+        $"Username={Environment.GetEnvironmentVariable("DB_USER") ?? "postgres"};" +
+        $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")}";
+}
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddSingleton<AttachmentStorage>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

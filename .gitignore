@@ -8,6 +8,9 @@ obj/
 *.user
 *.suo
 
+# Ortam değişkenleri (veritabanı parolası vb.) — şablonu: .env.example
+.env
+
 # SQLite veritabanı (yerel veri, seed açılışta oluşur)
 *.db
 *.db-shm
