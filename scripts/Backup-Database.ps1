@@ -1,16 +1,21 @@
 # PostgreSQL yedekleme betiği.
 # Bağlantı bilgilerini repo kökündeki .env dosyasından okur (DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD),
-# pg_dump custom formatında tarih damgalı yedek alır ve en yeni $KeepLast yedek dışındakileri siler.
+# pg_dump custom formatında tarih damgalı yedek alır ve kademeli saklama uygular:
+#   - Son $KeepDailyDays gündeki TÜM yedekler tutulur
+#   - Son $KeepWeeklyWeeks haftada her haftanın en yeni yedeği tutulur
+#   - Son $KeepMonthlyMonths ayda her ayın en yeni yedeği tutulur
+#   - Kalanlar silinir
 #
 # Elle çalıştırma:
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\Backup-Database.ps1
 #
-# Geri yükleme (örnek):
-#   pg_restore -h localhost -U postgres -d isbasi --clean --if-exists <yedek-dosyasi>
+# Geri yükleme için: scripts\Restore-Database.ps1 (bkz. README).
 
 param(
     [string]$BackupDir = (Join-Path $env:USERPROFILE "isbasi-yedekler"),
-    [int]$KeepLast = 30,
+    [int]$KeepDailyDays = 14,
+    [int]$KeepWeeklyWeeks = 8,
+    [int]$KeepMonthlyMonths = 12,
     [string]$PgDump = "C:\Program Files\PostgreSQL\17\bin\pg_dump.exe"
 )
 
@@ -49,11 +54,42 @@ try {
 $size = [math]::Round((Get-Item $outFile).Length / 1KB, 1)
 Write-Output "Yedek alindi: $outFile ($size KB)"
 
-# En yeni $KeepLast dosya dışındakileri sil
-Get-ChildItem $BackupDir -Filter "isbasi_*.dump" |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -Skip $KeepLast |
+# --- Kademeli saklama (gunluk / haftalik / aylik) ---
+$now = Get-Date
+$files = @(Get-ChildItem $BackupDir -Filter "isbasi_*.dump")
+$keep = New-Object "System.Collections.Generic.HashSet[string]"
+$calendar = [System.Globalization.CultureInfo]::InvariantCulture.Calendar
+
+# Son N gundeki tum yedekler
+foreach ($f in $files) {
+    if (($now - $f.LastWriteTime).TotalDays -le $KeepDailyDays) { [void]$keep.Add($f.FullName) }
+}
+
+# Son N haftada her ISO haftasinin en yeni yedegi
+$weekLimit = $now.AddDays(-7 * $KeepWeeklyWeeks)
+$files | Where-Object { $_.LastWriteTime -ge $weekLimit } |
+    Group-Object {
+        $t = $_.LastWriteTime
+        $week = $calendar.GetWeekOfYear($t, [System.Globalization.CalendarWeekRule]::FirstFourDayWeek, [DayOfWeek]::Monday)
+        "{0}-W{1:D2}" -f $t.Year, $week
+    } |
     ForEach-Object {
-        Remove-Item $_.FullName -Force -Confirm:$false
-        Write-Output "Eski yedek silindi: $($_.Name)"
+        $newest = $_.Group | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        [void]$keep.Add($newest.FullName)
     }
+
+# Son N ayda her ayin en yeni yedegi
+$monthLimit = $now.AddMonths(-$KeepMonthlyMonths)
+$files | Where-Object { $_.LastWriteTime -ge $monthLimit } |
+    Group-Object { $_.LastWriteTime.ToString("yyyy-MM") } |
+    ForEach-Object {
+        $newest = $_.Group | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        [void]$keep.Add($newest.FullName)
+    }
+
+foreach ($f in $files) {
+    if (-not $keep.Contains($f.FullName)) {
+        Remove-Item $f.FullName -Force -Confirm:$false
+        Write-Output "Eski yedek silindi: $($f.Name)"
+    }
+}
