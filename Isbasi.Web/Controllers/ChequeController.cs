@@ -103,10 +103,11 @@ public class ChequeController : Controller
         var cheque = await _db.Cheques.FindAsync(id);
         if (cheque == null) return NotFound();
 
-        _db.Cheques.Remove(cheque);
+        cheque.IsDeleted = true;
+        cheque.DeletedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
-        TempData["Success"] = "Çek silindi.";
+        TempData["Success"] = "Çek çöp kutusuna taşındı.";
         return RedirectToAction(nameof(Index), new { kind = cheque.Type == ChequeType.Issued ? "issued" : "received" });
     }
 

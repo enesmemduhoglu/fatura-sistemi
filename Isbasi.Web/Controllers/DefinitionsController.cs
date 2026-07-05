@@ -80,9 +80,10 @@ public class DefinitionsController : Controller
         var firm = await _db.Firms.FindAsync(id);
         if (firm == null) return NotFound();
 
-        bool hasInvoices = await _db.Invoices.AnyAsync(i => i.FirmId == id);
-        bool hasCheques = await _db.Cheques.AnyAsync(c => c.FirmId == id);
-        bool hasReceipts = await _db.FreelanceReceipts.AnyAsync(r => r.FirmId == id);
+        // Çöp kutusundaki belgeler de firmayı kilitler; yoksa geri alınan belge firmasız kalır
+        bool hasInvoices = await _db.Invoices.IgnoreQueryFilters().AnyAsync(i => i.FirmId == id);
+        bool hasCheques = await _db.Cheques.IgnoreQueryFilters().AnyAsync(c => c.FirmId == id);
+        bool hasReceipts = await _db.FreelanceReceipts.IgnoreQueryFilters().AnyAsync(r => r.FirmId == id);
         if (hasInvoices || hasCheques || hasReceipts)
         {
             TempData["Error"] = hasInvoices
@@ -323,8 +324,9 @@ public class DefinitionsController : Controller
         var safe = await _db.Safes.FindAsync(id);
         if (safe == null) return NotFound();
 
-        bool hasPayments = await _db.Payments.AnyAsync(p => p.SafeId == id)
-            || await _db.Cheques.AnyAsync(c => c.SafeId == id);
+        // Çöp kutusundaki hareketler de sayılır (geri alma kasasız kalmasın)
+        bool hasPayments = await _db.Payments.IgnoreQueryFilters().AnyAsync(p => p.SafeId == id)
+            || await _db.Cheques.IgnoreQueryFilters().AnyAsync(c => c.SafeId == id);
         if (hasPayments)
         {
             TempData["Error"] = "Bu kasada tahsilat/ödeme ya da çek hareketi olduğu için silinemez.";
@@ -374,8 +376,9 @@ public class DefinitionsController : Controller
         var bank = await _db.BankAccounts.FindAsync(id);
         if (bank == null) return NotFound();
 
-        bool hasPayments = await _db.Payments.AnyAsync(p => p.BankAccountId == id)
-            || await _db.Cheques.AnyAsync(c => c.BankAccountId == id);
+        // Çöp kutusundaki hareketler de sayılır (geri alma hesapsız kalmasın)
+        bool hasPayments = await _db.Payments.IgnoreQueryFilters().AnyAsync(p => p.BankAccountId == id)
+            || await _db.Cheques.IgnoreQueryFilters().AnyAsync(c => c.BankAccountId == id);
         if (hasPayments)
         {
             TempData["Error"] = "Bu hesapta tahsilat/ödeme ya da çek hareketi olduğu için silinemez.";

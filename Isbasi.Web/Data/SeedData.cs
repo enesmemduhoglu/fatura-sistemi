@@ -20,14 +20,20 @@ public static class SeedData
 
         if (!db.Users.Any())
         {
+            // İlk kullanıcının parolası yalnızca SEED_USER_PASSWORD ortam değişkeninden
+            // (.env) gelir; kodda varsayılan parola tutulmaz. Değişken tanımlı değilse
+            // sessizce kilitli bir uygulama yerine açık bir hata verilir.
+            string? seedPassword = Environment.GetEnvironmentVariable("SEED_USER_PASSWORD");
+            if (string.IsNullOrWhiteSpace(seedPassword))
+                throw new InvalidOperationException(
+                    "Veritabanında kullanıcı yok ve SEED_USER_PASSWORD tanımlı değil. " +
+                    "İlk kullanıcının oluşturulabilmesi için .env dosyasına SEED_USER_PASSWORD ekleyin.");
+
             db.Users.Add(new User
             {
                 Email = "eneshan034@gmail.com",
                 DisplayName = "Enes",
-                // Gerçek kurulumda parola SEED_USER_PASSWORD ortam değişkeniyle (.env) verilir;
-                // sabit değer yalnızca geliştirme ve test veritabanları içindir
-                PasswordHash = PasswordHasher.Hash(
-                    Environment.GetEnvironmentVariable("SEED_USER_PASSWORD") ?? "enes123")
+                PasswordHash = PasswordHasher.Hash(seedPassword)
             });
             db.SaveChanges();
         }

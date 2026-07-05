@@ -83,10 +83,11 @@ public class ReceiptController : Controller
         var receipt = await _db.FreelanceReceipts.FindAsync(id);
         if (receipt == null) return NotFound();
 
-        _db.FreelanceReceipts.Remove(receipt);
+        receipt.IsDeleted = true;
+        receipt.DeletedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
-        TempData["Success"] = "Makbuz silindi.";
+        TempData["Success"] = "Makbuz çöp kutusuna taşındı.";
         return RedirectToAction(nameof(Index), new { kind = receipt.Type == ReceiptType.Received ? "received" : "issued" });
     }
 
@@ -106,7 +107,9 @@ public class ReceiptController : Controller
     {
         var year = DateTime.Today.Year;
         var prefix = $"SMM{year}";
+        // Çöp kutusundakiler de sayılır ki silinmiş makbuzun numarası yeniden verilmesin
         var last = await _db.FreelanceReceipts
+            .IgnoreQueryFilters()
             .Where(r => r.ReceiptNumber.StartsWith(prefix))
             .OrderByDescending(r => r.ReceiptNumber)
             .Select(r => r.ReceiptNumber)

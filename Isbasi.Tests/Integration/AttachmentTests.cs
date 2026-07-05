@@ -115,7 +115,7 @@ public class AttachmentTests : IClassFixture<IsbasiWebFactory>
     }
 
     [Fact]
-    public async Task FaturaSilinince_EkDosyasiDiskten_Silinir()
+    public async Task FaturaKaliciSilinince_EkDosyasiDiskten_Silinir()
     {
         var client = await LoggedInClient();
 
@@ -146,10 +146,16 @@ public class AttachmentTests : IClassFixture<IsbasiWebFactory>
         Assert.Equal(HttpStatusCode.Redirect, upload.StatusCode);
         Assert.Equal(filesBefore + 1, CountFiles());
 
+        // Yumuşak silme (çöpe taşıma) fiziksel dosyaya dokunmaz
         var delete = await client.PostFormAsync($"/invoice/delete/{invoiceId}",
             $"/invoice/sales/edit?id={invoiceId}", new());
         Assert.Equal(HttpStatusCode.Redirect, delete.StatusCode);
-        Assert.Equal(filesBefore, CountFiles());   // fiziksel dosya da temizlendi
+        Assert.Equal(filesBefore + 1, CountFiles());
+
+        // Çöp kutusundan kalıcı silme kayıtla birlikte dosyayı da temizler
+        var purge = await client.PostFormAsync($"/trash/purge/invoice/{invoiceId}", "/trash", new());
+        Assert.Equal(HttpStatusCode.Redirect, purge.StatusCode);
+        Assert.Equal(filesBefore, CountFiles());
     }
 
     private int CountFiles() => Directory.Exists(_factory.AttachmentsRoot)

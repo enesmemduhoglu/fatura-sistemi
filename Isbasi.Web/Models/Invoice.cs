@@ -27,9 +27,12 @@ public enum InvoiceStatus
     [Display(Name = "Ödendi")] Paid = 1
 }
 
-public class Invoice
+public class Invoice : ISoftDeletable
 {
     public int Id { get; set; }
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 
     // Boş bırakılırsa kayıt sırasında otomatik numara verilir; boş string null'a
     // dönüşüp implicit [Required] tetiklemesin diye ConvertEmptyStringToNull kapalı

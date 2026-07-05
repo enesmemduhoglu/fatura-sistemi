@@ -310,23 +310,32 @@ public class InvoiceController : Controller
 
     [HttpPost("delete/{id:int}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id, [FromServices] AttachmentStorage storage)
+    public async Task<IActionResult> Delete(int id)
     {
+        // Yumuşak silme: belge tahsilatlarıyla birlikte çöp kutusuna taşınır; satırlar,
+        // ekler ve fiziksel dosyalar yerinde kalır. Kalıcı silme çöp kutusundan yapılır.
         var invoice = await _db.Invoices
-            .Include(i => i.Attachments)
+            .Include(i => i.Payments)
             .FirstOrDefaultAsync(i => i.Id == id);
         if (invoice == null) return NotFound();
 
-        var type = invoice.Type;
-        _db.Invoices.Remove(invoice);
+        var now = DateTime.Now;
+        invoice.IsDeleted = true;
+        invoice.DeletedAt = now;
+        foreach (var payment in invoice.Payments)
+        {
+            payment.IsDeleted = true;
+            payment.DeletedAt = now;
+        }
+
+        // Kaynağı çöpe giden tekrarlama planı üretim yapamaz; eski cascade
+        // davranışıyla uyumlu olarak plan kaldırılır (geri almada plan dönmez)
+        var plans = await _db.RecurringPlans.Where(p => p.SourceInvoiceId == id).ToListAsync();
+        _db.RecurringPlans.RemoveRange(plans);
+
         await _db.SaveChangesAsync();
-
-        // Kayıtlar cascade silindi; fiziksel dosyalar ancak burada temizlenebilir
-        foreach (var attachment in invoice.Attachments)
-            storage.Delete(attachment.StoredName);
-
-        TempData["Success"] = "Fatura silindi.";
-        return RedirectToList(type);
+        TempData["Success"] = "Fatura çöp kutusuna taşındı. Ayarlar → Çöp Kutusu'ndan geri alabilirsiniz.";
+        return RedirectToList(invoice.Type);
     }
 
     [HttpPost("attachments/upload/{invoiceId:int}")]

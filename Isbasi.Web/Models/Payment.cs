@@ -12,9 +12,12 @@ public enum PaymentAccountType
 /// Fatura tahsilatı ya da ödemesi. Yön faturanın tipinden gelir:
 /// satış faturasında para girişi (tahsilat), alış/gider faturasında para çıkışı (ödeme).
 /// </summary>
-public class Payment
+public class Payment : ISoftDeletable
 {
     public int Id { get; set; }
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 
     public int InvoiceId { get; set; }
     public Invoice? Invoice { get; set; }

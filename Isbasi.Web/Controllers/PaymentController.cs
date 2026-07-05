@@ -121,14 +121,22 @@ public class PaymentController : Controller
         if (payment == null) return NotFound();
 
         int invoiceId = payment.InvoiceId;
-        _db.Payments.Remove(payment);
+        payment.IsDeleted = true;
+        payment.DeletedAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
-        var invoice = await _db.Invoices.Include(i => i.Payments).FirstAsync(i => i.Id == invoiceId);
-        UpdateInvoiceStatus(invoice);
+        // Navigation üzerinden hesaplanmaz: izlenen silinmiş tahsilat EF fixup'ıyla
+        // koleksiyona geri döner ve toplama karışırdı. Aktif tutar sorguyla alınır
+        // (SQLite decimal Sum kısıtı nedeniyle bellekte toplanır).
+        var invoice = await _db.Invoices.FirstAsync(i => i.Id == invoiceId);
+        decimal paid = (await _db.Payments.Where(p => p.InvoiceId == invoiceId)
+            .Select(p => p.Amount).ToListAsync()).Sum();
+        invoice.Status = paid >= invoice.GrandTotalTry && invoice.GrandTotalTry > 0
+            ? InvoiceStatus.Paid
+            : InvoiceStatus.Open;
         await _db.SaveChangesAsync();
 
-        TempData["Success"] = "Kayıt silindi.";
+        TempData["Success"] = "Kayıt çöp kutusuna taşındı.";
         return RedirectToAction(nameof(Add), new { invoiceId });
     }
 

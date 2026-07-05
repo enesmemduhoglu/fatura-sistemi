@@ -24,6 +24,14 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Yumuşak silme: çöpe taşınan belgeler tüm sorgulardan (listeler, raporlar,
+        // bakiyeler, navigation include'lar) otomatik gizlenir. Çöp kutusu ve
+        // silme korumaları IgnoreQueryFilters ile bilinçli olarak filtreyi aşar.
+        modelBuilder.Entity<Invoice>().HasQueryFilter(i => !i.IsDeleted);
+        modelBuilder.Entity<Payment>().HasQueryFilter(p => !p.IsDeleted);
+        modelBuilder.Entity<Cheque>().HasQueryFilter(c => !c.IsDeleted);
+        modelBuilder.Entity<FreelanceReceipt>().HasQueryFilter(r => !r.IsDeleted);
+
         modelBuilder.Entity<Invoice>()
             .HasMany(i => i.Lines)
             .WithOne(l => l.Invoice)

@@ -13,9 +13,12 @@ public enum ReceiptType
 /// net (tahsil edilecek) = brüt − stopaj + KDV. Verilen makbuz gelir (KDV'si
 /// hesaplanan KDV'ye), alınan makbuz gider (KDV'si indirilecek KDV'ye) sayılır.
 /// </summary>
-public class FreelanceReceipt
+public class FreelanceReceipt : ISoftDeletable
 {
     public int Id { get; set; }
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 
     [Display(Name = "Makbuz Tipi")]
     public ReceiptType Type { get; set; }

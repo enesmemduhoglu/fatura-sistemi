@@ -9,7 +9,10 @@ public static class InvoiceNumbers
     {
         var year = DateTime.Today.Year;
         var prefix = $"{series}{year}";
+        // Çöp kutusundaki belgeler de sayılır; yoksa silinmiş faturanın numarası
+        // yeni belgeye verilir ve geri almada çift numara oluşur
         var last = await db.Invoices
+            .IgnoreQueryFilters()
             .Where(i => i.InvoiceNumber.StartsWith(prefix))
             .OrderByDescending(i => i.InvoiceNumber)
             .Select(i => i.InvoiceNumber)

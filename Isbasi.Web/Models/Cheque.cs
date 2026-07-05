@@ -19,9 +19,12 @@ public enum ChequeStatus
 /// Müşteriden alınan ya da tedarikçiye verilen çek. Tahsil/ödeme anında
 /// (Cleared) seçilen kasa/banka bakiyesine yansır: alınan çek giriş, verilen çıkış.
 /// </summary>
-public class Cheque
+public class Cheque : ISoftDeletable
 {
     public int Id { get; set; }
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 
     [Display(Name = "Çek Tipi")]
     public ChequeType Type { get; set; }
