@@ -75,6 +75,18 @@ Geri yükleme örneği:
 pg_restore -h localhost -U postgres -d isbasi --clean --if-exists <yedek-dosyasi>
 ```
 
+## Docker ile çalıştırma
+
+Uygulamayı ve PostgreSQL'i birlikte ayağa kaldırmak için (repo kökünde `.env` dolu olmalı — compose `${...}` değerlerini oradan okur):
+
+```
+docker compose up -d
+```
+
+Uygulama `http://localhost:8080` adresinde açılır. Veritabanı verisi `pgdata`, fatura ekleri `appdata` volume'unda kalıcıdır. Durdurmak için `docker compose down` (volume'lar silinmez).
+
+Gizli değerler imaja veya compose dosyasına yazılmaz: `.env` hem `.gitignore` hem `.dockerignore` içindedir; değerler yalnızca çalışma anında ortam değişkeni olarak konteynere geçer.
+
 ## Şema değişiklikleri
 
 Yeni migration eklemek için:
