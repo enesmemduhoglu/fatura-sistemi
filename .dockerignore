@@ -1,0 +1,18 @@
+# Gizli değerler asla imaja girmez
+.env
+
+bin/
+obj/
+**/bin/
+**/obj/
+.git/
+.github/
+.idea/
+Isbasi.Tests/
+scripts/
+README.md
+*.db
+*.db-shm
+*.db-wal
+Isbasi.Web/App_Data/
+localhost_*.png
