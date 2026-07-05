@@ -211,6 +211,20 @@ public class InvoiceController : Controller
         return View(invoice);
     }
 
+    [HttpGet("pdf/{id:int}")]
+    public async Task<IActionResult> Pdf(int id)
+    {
+        var invoice = await _db.Invoices.AsNoTracking()
+            .Include(i => i.Firm)
+            .Include(i => i.Lines)
+            .FirstOrDefaultAsync(i => i.Id == id);
+        if (invoice == null) return NotFound();
+
+        var company = await _db.CompanySettings.AsNoTracking().FirstOrDefaultAsync();
+        var bytes = InvoicePdfGenerator.Generate(invoice, company);
+        return File(bytes, "application/pdf", $"{invoice.InvoiceNumber}.pdf");
+    }
+
     [HttpGet("export")]
     public async Task<IActionResult> Export(string mode = "Sales", string? status = null, string? q = null,
         DateTime? start = null, DateTime? end = null)

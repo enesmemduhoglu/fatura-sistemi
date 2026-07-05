@@ -60,6 +60,7 @@
         <div class="d-flex gap-2">
             @if (Model.Id != 0)
             {
+                <a href="/invoice/pdf/@Model.Id" class="btn btn-cancel btn-sm"><i class="fas fa-file-pdf me-1"></i> PDF İndir</a>
                 <a href="/invoice/print/@Model.Id" target="_blank" class="btn btn-cancel btn-sm"><i class="fas fa-print me-1"></i> Yazdır</a>
             }
             @if (Model.Id != 0)
