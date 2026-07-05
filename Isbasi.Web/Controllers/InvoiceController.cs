@@ -350,8 +350,7 @@ public class InvoiceController : Controller
                 InvoiceId = invoice.Id,
                 FileName = Path.GetFileName(file.FileName),
                 StoredName = await storage.SaveAsync(file),
-                ContentType = string.IsNullOrWhiteSpace(file.ContentType)
-                    ? "application/octet-stream" : file.ContentType,
+                ContentType = AttachmentStorage.ContentTypeFor(file.FileName),
                 Size = file.Length
             });
             await _db.SaveChangesAsync();
@@ -368,7 +367,8 @@ public class InvoiceController : Controller
 
         string path = storage.PathFor(attachment.StoredName);
         if (!System.IO.File.Exists(path)) return NotFound();
-        return PhysicalFile(path, attachment.ContentType, attachment.FileName);
+        // Eski kayıtlarda istemci beyanı saklanmış olabilir; tür her zaman uzantıdan türetilir
+        return PhysicalFile(path, AttachmentStorage.ContentTypeFor(attachment.StoredName), attachment.FileName);
     }
 
     [HttpPost("attachments/delete/{id:int}")]

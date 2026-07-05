@@ -2,6 +2,7 @@ using System.Globalization;
 using Isbasi.Web.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,9 +16,14 @@ DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Tüm sayfalar giriş ister; Account controller'ı [AllowAnonymous] ile açılır
+// Tüm sayfalar giriş ister; Account controller'ı [AllowAnonymous] ile açılır.
+// CSRF: POST/PUT/DELETE isteklerinde antiforgery token otomatik doğrulanır;
+// aksiyonlardaki [ValidateAntiForgeryToken] öznitelikleri yedek katman olarak kalır
 builder.Services.AddControllersWithViews(options =>
-    options.Filters.Add(new AuthorizeFilter()));
+{
+    options.Filters.Add(new AuthorizeFilter());
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
 
 // DB_* değişkenleri (.env ya da ortam) öncelikli; yoksa appsettings ConnectionStrings:Default
 string? connectionString = builder.Configuration.GetConnectionString("Default");
@@ -33,6 +39,7 @@ if (!string.IsNullOrWhiteSpace(dbHost))
 }
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddSingleton<AttachmentStorage>();
+builder.Services.AddSingleton<LoginThrottle>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -41,6 +48,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/account/login";
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.SlidingExpiration = true;
+        // Oturum çerezi script'ten okunamaz, siteler arası isteklerde gönderilmez;
+        // HTTPS altında Secure işaretlenir (yerel HTTP geliştirme bozulmaz)
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 
 var app = builder.Build();
@@ -68,6 +80,18 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
 }
+
+// Güvenlik başlıkları: MIME koklamayı, iframe içine alınmayı (clickjacking) ve
+// dış sitelere referrer sızmasını engeller. Statik dosyalar dahil tüm yanıtlara eklenir.
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "same-origin";
+    headers["Content-Security-Policy"] = "frame-ancestors 'none'";
+    await next();
+});
 
 app.UseStaticFiles();
 app.UseRouting();

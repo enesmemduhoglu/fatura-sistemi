@@ -12,9 +12,18 @@ namespace Isbasi.Web.Controllers;
 [Route("account")]
 public class AccountController : Controller
 {
-    private readonly AppDbContext _db;
+    // Kullanıcı bulunamadığında da aynı maliyette doğrulama yapılır; yoksa yanıt
+    // süresinden hangi e-postaların kayıtlı olduğu anlaşılabilir
+    private static readonly string DummyHash = PasswordHasher.Hash(Guid.NewGuid().ToString());
 
-    public AccountController(AppDbContext db) => _db = db;
+    private readonly AppDbContext _db;
+    private readonly LoginThrottle _throttle;
+
+    public AccountController(AppDbContext db, LoginThrottle throttle)
+    {
+        _db = db;
+        _throttle = throttle;
+    }
 
     [HttpGet("login")]
     public IActionResult Login(string? returnUrl)
@@ -28,19 +37,33 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(string email, string password, string? returnUrl)
     {
-        var user = await _db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email == email);
-
-        if (user == null || !PasswordHasher.Verify(password ?? "", user.PasswordHash))
+        email ??= "";
+        if (_throttle.IsBlocked(email))
         {
-            ViewBag.Error = "E-posta ya da parola hatalı.";
+            ViewBag.Error = "Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin.";
             ViewBag.ReturnUrl = returnUrl;
             return View();
         }
 
+        var user = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == email);
+
+        bool valid = user != null
+            ? PasswordHasher.Verify(password ?? "", user.PasswordHash)
+            : PasswordHasher.Verify(password ?? "", DummyHash);
+
+        if (!valid)
+        {
+            _throttle.RecordFailure(email);
+            ViewBag.Error = "E-posta ya da parola hatalı.";
+            ViewBag.ReturnUrl = returnUrl;
+            return View();
+        }
+        _throttle.RecordSuccess(email);
+
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.NameIdentifier, user!.Id.ToString()),
             new(ClaimTypes.Name, user.DisplayName),
             new(ClaimTypes.Email, user.Email)
         };

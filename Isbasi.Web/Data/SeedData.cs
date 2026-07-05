@@ -24,7 +24,10 @@ public static class SeedData
             {
                 Email = "eneshan034@gmail.com",
                 DisplayName = "Enes",
-                PasswordHash = PasswordHasher.Hash("enes123")
+                // Gerçek kurulumda parola SEED_USER_PASSWORD ortam değişkeniyle (.env) verilir;
+                // sabit değer yalnızca geliştirme ve test veritabanları içindir
+                PasswordHash = PasswordHasher.Hash(
+                    Environment.GetEnvironmentVariable("SEED_USER_PASSWORD") ?? "enes123")
             });
             db.SaveChanges();
         }
