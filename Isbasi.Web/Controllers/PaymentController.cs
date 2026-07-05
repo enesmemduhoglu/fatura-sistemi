@@ -23,9 +23,13 @@ public class PaymentController : Controller
             .AsQueryable();
 
         if (direction == "in")
-            query = query.Where(p => p.Invoice!.Type == InvoiceType.SalesWholesale || p.Invoice.Type == InvoiceType.SalesRetail);
+            query = query.Where(p => p.Invoice!.Type == InvoiceType.SalesWholesale
+                || p.Invoice.Type == InvoiceType.SalesRetail
+                || p.Invoice.Type == InvoiceType.PurchaseReturn);
         else if (direction == "out")
-            query = query.Where(p => p.Invoice!.Type == InvoiceType.Purchase || p.Invoice.Type == InvoiceType.Expense);
+            query = query.Where(p => p.Invoice!.Type == InvoiceType.Purchase
+                || p.Invoice.Type == InvoiceType.Expense
+                || p.Invoice.Type == InvoiceType.SalesReturn);
 
         if (account == "safe") query = query.Where(p => p.SafeId != null);
         else if (account == "bank") query = query.Where(p => p.BankAccountId != null);
@@ -105,7 +109,7 @@ public class PaymentController : Controller
         UpdateInvoiceStatus(invoice);
         await _db.SaveChangesAsync();
 
-        TempData["Success"] = invoice.IsSales ? "Tahsilat kaydedildi." : "Ödeme kaydedildi.";
+        TempData["Success"] = invoice.IsCashIncoming ? "Tahsilat kaydedildi." : "Ödeme kaydedildi.";
         return RedirectToAction(nameof(Add), new { invoiceId = model.InvoiceId });
     }
 

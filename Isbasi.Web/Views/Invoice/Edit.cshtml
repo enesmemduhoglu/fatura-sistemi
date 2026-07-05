@@ -10,6 +10,8 @@
         InvoiceType.Expense => "Gider Faturası",
         InvoiceType.SalesOrder => "Satış Siparişi",
         InvoiceType.PurchaseOrder => "Alış Siparişi",
+        InvoiceType.SalesReturn => "Satış İade Faturası",
+        InvoiceType.PurchaseReturn => "Alış İade Faturası",
         _ => "Alış Faturası"
     };
     string vatNote = isSales ? (vatIncluded ? "(KDV Dahil)" : "(KDV Hariç)") : "";
@@ -20,6 +22,8 @@
         InvoiceType.Expense => "/invoice/purchaseservices",
         InvoiceType.SalesOrder => "/invoice/orders",
         InvoiceType.PurchaseOrder => "/invoice/purchaseorders",
+        InvoiceType.SalesReturn => "/invoice/salesreturns",
+        InvoiceType.PurchaseReturn => "/invoice/purchasereturns",
         _ => "/invoice/sales"
     };
     string listTitle = Model.Type switch
@@ -28,6 +32,8 @@
         InvoiceType.Expense => "Giderler",
         InvoiceType.SalesOrder => "Siparişler",
         InvoiceType.PurchaseOrder => "Alış Siparişleri",
+        InvoiceType.SalesReturn => "Satış İade Faturaları",
+        InvoiceType.PurchaseReturn => "Alış İade Faturaları",
         _ => "Satış Faturaları"
     };
     var firms = (List<Firm>)ViewBag.Firms;

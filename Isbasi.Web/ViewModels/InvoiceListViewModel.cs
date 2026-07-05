@@ -4,10 +4,14 @@ namespace Isbasi.Web.ViewModels;
 
 public class InvoiceListViewModel
 {
-    public string Mode { get; set; } = "Sales";   // Sales | Purchase | Expense | Orders | PurchaseOrders
+    public string Mode { get; set; } = "Sales";   // Sales | Purchase | Expense | Orders | PurchaseOrders | SalesReturns | PurchaseReturns
     public bool IsSales => Mode == "Sales";
     public bool IsExpense => Mode == "Expense";
     public bool IsOrderMode => Mode is "Orders" or "PurchaseOrders";
+    public bool IsReturnMode => Mode is "SalesReturns" or "PurchaseReturns";
+
+    // İade dahil para giren taraf: tahsilat sütun başlıkları buna göre seçilir
+    public bool IsCashIncoming => IsSales || Mode == "PurchaseReturns";
 
     public string Title => Mode switch
     {
@@ -15,6 +19,8 @@ public class InvoiceListViewModel
         "Purchase" => "Alış Faturaları",
         "Orders" => "Siparişler",
         "PurchaseOrders" => "Alış Siparişleri",
+        "SalesReturns" => "Satış İade Faturaları",
+        "PurchaseReturns" => "Alış İade Faturaları",
         _ => "Giderler"
     };
 
@@ -24,6 +30,8 @@ public class InvoiceListViewModel
         "Purchase" => "/invoice/purchase",
         "Orders" => "/invoice/orders",
         "PurchaseOrders" => "/invoice/purchaseorders",
+        "SalesReturns" => "/invoice/salesreturns",
+        "PurchaseReturns" => "/invoice/purchasereturns",
         _ => "/invoice/purchaseservices"
     };
 

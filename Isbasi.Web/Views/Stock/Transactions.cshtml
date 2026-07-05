@@ -59,7 +59,13 @@
                 <tbody>
                     @foreach (var line in Model)
                     {
-                        bool isOut = line.Invoice!.IsSales;
+                        bool isOut = line.Invoice!.IsSales || line.Invoice.Type == InvoiceType.PurchaseReturn;
+                        string moveLabel = line.Invoice.Type switch
+                        {
+                            InvoiceType.SalesReturn => "Giriş (Satış İade)",
+                            InvoiceType.PurchaseReturn => "Çıkış (Alış İade)",
+                            _ => isOut ? "Çıkış (Satış)" : "Giriş (Alış)"
+                        };
                         <tr>
                             <td>@line.Invoice.InvoiceDate.ToString("dd.MM.yyyy")</td>
                             <td><a href="/invoice/print/@line.InvoiceId" target="_blank" class="text-decoration-none">@line.Invoice.InvoiceNumber</a></td>
@@ -67,7 +73,7 @@
                             <td class="fw-medium">@line.ItemName</td>
                             <td>
                                 <span class="status-badge @(isOut ? "status-open" : "status-paid")">
-                                    <i class="fas @(isOut ? "fa-arrow-up" : "fa-arrow-down") me-1"></i>@(isOut ? "Çıkış (Satış)" : "Giriş (Alış)")
+                                    <i class="fas @(isOut ? "fa-arrow-up" : "fa-arrow-down") me-1"></i>@moveLabel
                                 </span>
                             </td>
                             <td class="text-end fw-medium @(isOut ? "text-danger" : "text-success")">@(isOut ? "-" : "+")@line.Quantity.ToString("0.##")</td>

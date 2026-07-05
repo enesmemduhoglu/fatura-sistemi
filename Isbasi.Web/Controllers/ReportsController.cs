@@ -89,8 +89,14 @@ public class ReportsController : Controller
                 Sales = monthInvoices
                     .Where(i => i.Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail)
                     .Sum(i => Math.Round(i.GrandTotal * i.ExchangeRate, 2)),
+                SalesReturns = monthInvoices
+                    .Where(i => i.Type == InvoiceType.SalesReturn)
+                    .Sum(i => Math.Round(i.GrandTotal * i.ExchangeRate, 2)),
                 Purchases = monthInvoices
                     .Where(i => i.Type == InvoiceType.Purchase)
+                    .Sum(i => Math.Round(i.GrandTotal * i.ExchangeRate, 2)),
+                PurchaseReturns = monthInvoices
+                    .Where(i => i.Type == InvoiceType.PurchaseReturn)
                     .Sum(i => Math.Round(i.GrandTotal * i.ExchangeRate, 2)),
                 Expenses = monthInvoices
                     .Where(i => i.Type == InvoiceType.Expense)
@@ -168,13 +174,17 @@ public class ReportsController : Controller
             vm.Months.Add(new VatMonthRow
             {
                 Month = culture.DateTimeFormat.GetMonthName(month),
+                // İadeler beyanda karşı tarafa yazılır: alış iadesi KDV'si hesaplanan,
+                // satış iadesi KDV'si indirilecek KDV'ye eklenir
                 CalculatedVat = monthInvoices
-                    .Where(i => i.Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail)
+                    .Where(i => i.Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail
+                        or InvoiceType.PurchaseReturn)
                     .Sum(i => i.VatTotal)
                     + monthReceipts.Where(r => r.Type == ReceiptType.Issued)
                         .Sum(r => Math.Round(r.GrossAmount * r.VatRate / 100m, 2)),
                 DeductibleVat = monthInvoices
-                    .Where(i => i.Type is InvoiceType.Purchase or InvoiceType.Expense)
+                    .Where(i => i.Type is InvoiceType.Purchase or InvoiceType.Expense
+                        or InvoiceType.SalesReturn)
                     .Sum(i => i.VatTotal)
                     + monthReceipts.Where(r => r.Type == ReceiptType.Received)
                         .Sum(r => Math.Round(r.GrossAmount * r.VatRate / 100m, 2))

@@ -40,7 +40,9 @@ public class DefinitionsController : Controller
                 g => g.Sum(i =>
                 {
                     var tl = Math.Round(i.GrandTotal * i.ExchangeRate, 2);
-                    return i.Type is InvoiceType.Purchase or InvoiceType.Expense ? -tl : tl;
+                    // Satış iadesi firmayı alacaklandırır, alış iadesi borçlandırır
+                    return i.Type is InvoiceType.Purchase or InvoiceType.Expense or InvoiceType.SalesReturn
+                        ? -tl : tl;
                 }));
         ViewBag.Balances = balances;
         ViewBag.Query = q;
@@ -115,7 +117,8 @@ public class DefinitionsController : Controller
             .ToListAsync();
         foreach (var i in invoices)
         {
-            bool debit = i.IsSales;
+            // Satış iadesi firmayı alacaklandırır, alış iadesi borçlandırır (fatura yönünün tersi)
+            bool debit = i.IsSales || i.Type == InvoiceType.PurchaseReturn;
             // Ekstre TL bazlıdır; dövizli belgede orijinal tutar açıklamada gösterilir
             string? description = i.Currency == "TL"
                 ? i.Description
@@ -129,6 +132,8 @@ public class DefinitionsController : Controller
                     InvoiceType.SalesWholesale => "Satış Faturası",
                     InvoiceType.SalesRetail => "Satış Faturası",
                     InvoiceType.Purchase => "Alış Faturası",
+                    InvoiceType.SalesReturn => "Satış İade Faturası",
+                    InvoiceType.PurchaseReturn => "Alış İade Faturası",
                     _ => "Gider Faturası"
                 },
                 Description = description,
@@ -138,6 +143,8 @@ public class DefinitionsController : Controller
                 {
                     InvoiceType.Purchase => $"/invoice/purchase/edit?id={i.Id}",
                     InvoiceType.Expense => $"/invoice/purchaseservices/edit?id={i.Id}",
+                    InvoiceType.SalesReturn => $"/invoice/salesreturns/edit?id={i.Id}",
+                    InvoiceType.PurchaseReturn => $"/invoice/purchasereturns/edit?id={i.Id}",
                     _ => $"/invoice/sales/edit?id={i.Id}"
                 }
             });
@@ -150,7 +157,7 @@ public class DefinitionsController : Controller
             .ToListAsync();
         foreach (var p in payments)
         {
-            bool incoming = p.Invoice!.IsSales;   // tahsilat: borcu azaltır (alacak)
+            bool incoming = p.Invoice!.IsCashIncoming;   // tahsilat: borcu azaltır (alacak)
             entries.Add(new StatementRow
             {
                 Date = p.Date,

@@ -38,6 +38,11 @@ public class RecurringController : Controller
             TempData["Error"] = "Siparişler için tekrarlama planı oluşturulamaz.";
             return Redirect(invoice.Type == InvoiceType.PurchaseOrder ? "/invoice/purchaseorders" : "/invoice/orders");
         }
+        if (invoice.IsReturn)
+        {
+            TempData["Error"] = "İade faturaları için tekrarlama planı oluşturulamaz.";
+            return Redirect(invoice.Type == InvoiceType.SalesReturn ? "/invoice/salesreturns" : "/invoice/purchasereturns");
+        }
 
         var existing = await _db.RecurringPlans.AsNoTracking()
             .FirstOrDefaultAsync(p => p.SourceInvoiceId == invoiceId);
@@ -62,7 +67,7 @@ public class RecurringController : Controller
     public async Task<IActionResult> Create(RecurringPlan model)
     {
         var invoice = await _db.Invoices.AsNoTracking().FirstOrDefaultAsync(i => i.Id == model.SourceInvoiceId);
-        if (invoice == null || invoice.IsOrder) return NotFound();
+        if (invoice == null || invoice.IsOrder || invoice.IsReturn) return NotFound();
 
         if (model.EndDate.HasValue && model.EndDate.Value < model.NextRunDate)
             ModelState.AddModelError("EndDate", "Bitiş tarihi ilk fatura tarihinden önce olamaz.");

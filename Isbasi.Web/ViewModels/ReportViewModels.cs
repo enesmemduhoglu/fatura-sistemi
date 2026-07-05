@@ -33,10 +33,12 @@ public class ReportSummaryViewModel
 public class SalesPurchaseMonthRow
 {
     public string Month { get; set; } = "";
-    public decimal Sales { get; set; }      // satış faturaları genel toplamı
-    public decimal Purchases { get; set; }  // alış faturaları genel toplamı
-    public decimal Expenses { get; set; }   // gider faturaları genel toplamı
-    public decimal Difference => Sales - Purchases - Expenses;
+    public decimal Sales { get; set; }           // satış faturaları genel toplamı
+    public decimal SalesReturns { get; set; }    // satış iade faturaları genel toplamı
+    public decimal Purchases { get; set; }       // alış faturaları genel toplamı
+    public decimal PurchaseReturns { get; set; } // alış iade faturaları genel toplamı
+    public decimal Expenses { get; set; }        // gider faturaları genel toplamı
+    public decimal Difference => (Sales - SalesReturns) - (Purchases - PurchaseReturns) - Expenses;
 }
 
 public class SalesPurchaseViewModel
@@ -44,9 +46,11 @@ public class SalesPurchaseViewModel
     public int Year { get; set; }
     public List<SalesPurchaseMonthRow> Months { get; set; } = new();
     public decimal TotalSales => Months.Sum(m => m.Sales);
+    public decimal TotalSalesReturns => Months.Sum(m => m.SalesReturns);
     public decimal TotalPurchases => Months.Sum(m => m.Purchases);
+    public decimal TotalPurchaseReturns => Months.Sum(m => m.PurchaseReturns);
     public decimal TotalExpenses => Months.Sum(m => m.Expenses);
-    public decimal TotalDifference => TotalSales - TotalPurchases - TotalExpenses;
+    public decimal TotalDifference => Months.Sum(m => m.Difference);
 }
 
 public class OrderStatusRow

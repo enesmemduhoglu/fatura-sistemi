@@ -10,8 +10,8 @@ public record CashBalances(Dictionary<int, decimal> SafeBalances, Dictionary<int
 }
 
 /// <summary>
-/// Güncel kasa/banka bakiyeleri: açılış bakiyesi + tahsilatlar (satış) − ödemeler (alış/gider)
-/// + tahsil edilen alınan çekler − ödenen verilen çekler.
+/// Güncel kasa/banka bakiyeleri: açılış bakiyesi + tahsilatlar (satış, alış iadesi)
+/// − ödemeler (alış/gider, satış iadesi) + tahsil edilen alınan çekler − ödenen verilen çekler.
 /// SQLite decimal üzerinde SQL Sum yapamadığı için toplamlar bellekte alınır.
 /// </summary>
 public static class CashBalanceCalculator
@@ -34,7 +34,8 @@ public static class CashBalanceCalculator
 
         foreach (var payment in payments)
         {
-            bool isIncoming = payment.Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail;
+            bool isIncoming = payment.Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail
+                or InvoiceType.PurchaseReturn;
             Apply(payment.SafeId, payment.BankAccountId, isIncoming ? payment.Amount : -payment.Amount);
         }
 

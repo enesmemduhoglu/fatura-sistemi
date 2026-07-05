@@ -3,8 +3,8 @@
     ViewData["Title"] = "Tahsilat ve Ödemeler";
     string? direction = ViewBag.Direction as string;
     string? account = ViewBag.Account as string;
-    decimal totalIn = Model.Where(p => p.Invoice!.IsSales).Sum(p => p.Amount);
-    decimal totalOut = Model.Where(p => !p.Invoice!.IsSales).Sum(p => p.Amount);
+    decimal totalIn = Model.Where(p => p.Invoice!.IsCashIncoming).Sum(p => p.Amount);
+    decimal totalOut = Model.Where(p => !p.Invoice!.IsCashIncoming).Sum(p => p.Amount);
 }
 
 <div class="page-header">
@@ -64,7 +64,7 @@
                 <tbody>
                     @foreach (var payment in Model)
                     {
-                        bool incoming = payment.Invoice!.IsSales;
+                        bool incoming = payment.Invoice!.IsCashIncoming;
                         <tr>
                             <td>@payment.Date.ToString("dd.MM.yyyy")</td>
                             <td><a href="/payment/add?invoiceId=@payment.InvoiceId" class="fw-medium text-decoration-none">@payment.Invoice.InvoiceNumber</a></td>

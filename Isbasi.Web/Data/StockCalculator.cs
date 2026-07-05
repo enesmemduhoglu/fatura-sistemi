@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Isbasi.Web.Data;
 
 /// <summary>
-/// Güncel stok = açılış stok miktarı + alış faturası girişleri − satış faturası çıkışları.
+/// Güncel stok = açılış stok miktarı + alış faturası girişleri − satış faturası çıkışları
+/// + satış iadesi girişleri − alış iadesi çıkışları.
 /// Gider faturalarında ürün satırı bulunmaz. Toplamlar bellekte alınır (SQLite decimal Sum kısıtı).
 /// </summary>
 public static class StockCalculator
@@ -21,9 +22,9 @@ public static class StockCalculator
         foreach (var line in lines)
         {
             if (!stocks.ContainsKey(line.ProductId)) continue;
-            if (line.Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail)
+            if (line.Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail or InvoiceType.PurchaseReturn)
                 stocks[line.ProductId] -= line.Quantity;
-            else if (line.Type == InvoiceType.Purchase)
+            else if (line.Type is InvoiceType.Purchase or InvoiceType.SalesReturn)
                 stocks[line.ProductId] += line.Quantity;
         }
         return stocks;

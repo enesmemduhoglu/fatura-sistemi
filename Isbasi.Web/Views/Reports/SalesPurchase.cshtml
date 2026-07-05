@@ -24,7 +24,9 @@
                 <tr>
                     <th>Ay</th>
                     <th class="text-end">Satış</th>
+                    <th class="text-end">Satış İade</th>
                     <th class="text-end">Alış</th>
+                    <th class="text-end">Alış İade</th>
                     <th class="text-end">Gider</th>
                     <th class="text-end">Fark</th>
                 </tr>
@@ -32,11 +34,14 @@
             <tbody>
                 @foreach (var row in Model.Months)
                 {
-                    bool empty = row.Sales == 0 && row.Purchases == 0 && row.Expenses == 0;
+                    bool empty = row.Sales == 0 && row.SalesReturns == 0 && row.Purchases == 0
+                        && row.PurchaseReturns == 0 && row.Expenses == 0;
                     <tr class="@(empty ? "text-muted" : "")">
                         <td class="text-capitalize">@row.Month</td>
                         <td class="text-end">@(empty ? "-" : row.Sales.ToString("N2"))</td>
+                        <td class="text-end text-danger">@(row.SalesReturns == 0 ? "-" : $"-{row.SalesReturns:N2}")</td>
                         <td class="text-end">@(empty ? "-" : row.Purchases.ToString("N2"))</td>
+                        <td class="text-end text-danger">@(row.PurchaseReturns == 0 ? "-" : $"-{row.PurchaseReturns:N2}")</td>
                         <td class="text-end">@(empty ? "-" : row.Expenses.ToString("N2"))</td>
                         <td class="text-end fw-medium @(row.Difference < 0 ? "text-danger" : "")">@(empty ? "-" : row.Difference.ToString("N2"))</td>
                     </tr>
@@ -46,12 +51,14 @@
                 <tr class="fw-bold" style="background:#f7f8fa">
                     <td>Toplam</td>
                     <td class="text-end">@Model.TotalSales.ToString("N2")</td>
+                    <td class="text-end text-danger">@(Model.TotalSalesReturns == 0 ? "-" : $"-{Model.TotalSalesReturns:N2}")</td>
                     <td class="text-end">@Model.TotalPurchases.ToString("N2")</td>
+                    <td class="text-end text-danger">@(Model.TotalPurchaseReturns == 0 ? "-" : $"-{Model.TotalPurchaseReturns:N2}")</td>
                     <td class="text-end">@Model.TotalExpenses.ToString("N2")</td>
                     <td class="text-end @(Model.TotalDifference < 0 ? "text-danger" : "")">@Model.TotalDifference.ToString("N2") ₺</td>
                 </tr>
             </tfoot>
         </table>
     </div>
-    <div class="text-muted small">Satış: satış faturaları genel toplamı. Alış/Gider: alış ve gider faturaları genel toplamı. Siparişler dahil edilmez.</div>
+    <div class="text-muted small">Satış: satış faturaları genel toplamı. Alış/Gider: alış ve gider faturaları genel toplamı. İadeler kendi tarafından düşülerek fark hesabına katılır. Siparişler dahil edilmez.</div>
 </div>

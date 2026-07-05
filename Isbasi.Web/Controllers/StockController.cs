@@ -23,7 +23,9 @@ public class StockController : Controller
             .Where(l => l.ProductId != null
                 && (l.Invoice!.Type == InvoiceType.SalesWholesale
                     || l.Invoice.Type == InvoiceType.SalesRetail
-                    || l.Invoice.Type == InvoiceType.Purchase));
+                    || l.Invoice.Type == InvoiceType.Purchase
+                    || l.Invoice.Type == InvoiceType.SalesReturn
+                    || l.Invoice.Type == InvoiceType.PurchaseReturn));
 
         if (productId.HasValue) query = query.Where(l => l.ProductId == productId.Value);
         if (start.HasValue) query = query.Where(l => l.Invoice!.InvoiceDate >= start.Value);

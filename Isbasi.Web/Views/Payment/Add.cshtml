@@ -3,12 +3,14 @@
     var invoice = (Invoice)ViewBag.Invoice;
     var safes = (List<Safe>)ViewBag.Safes;
     var banks = (List<BankAccount>)ViewBag.Banks;
-    bool isSales = invoice.IsSales;
+    bool isSales = invoice.IsCashIncoming;
     string operationName = isSales ? "Tahsilat" : "Ödeme";
     string listUrl = invoice.Type switch
     {
         InvoiceType.Purchase => "/invoice/purchase",
         InvoiceType.Expense => "/invoice/purchaseservices",
+        InvoiceType.SalesReturn => "/invoice/salesreturns",
+        InvoiceType.PurchaseReturn => "/invoice/purchasereturns",
         _ => "/invoice/sales"
     };
     ViewData["Title"] = $"{operationName} - {invoice.InvoiceNumber}";

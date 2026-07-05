@@ -11,6 +11,8 @@
         InvoiceType.Expense => "GİDER FATURASI",
         InvoiceType.SalesOrder => "SATIŞ SİPARİŞİ",
         InvoiceType.PurchaseOrder => "ALIŞ SİPARİŞİ",
+        InvoiceType.SalesReturn => "SATIŞ İADE FATURASI",
+        InvoiceType.PurchaseReturn => "ALIŞ İADE FATURASI",
         _ => "ALIŞ FATURASI"
     };
 }
@@ -98,7 +100,7 @@
 
         <div class="parties">
             <div class="party">
-                <h3>@(Model.IsSales ? "Sayın (Alıcı)" : "Satıcı")</h3>
+                <h3>@(Model.IsSales || Model.Type == InvoiceType.SalesReturn ? "Sayın (Alıcı)" : "Satıcı")</h3>
                 <div class="name">@Model.Firm?.Name</div>
                 @if (!string.IsNullOrEmpty(Model.Firm?.Address)) { <div>@Model.Firm.Address</div> }
                 <div>@Model.Firm?.District @(string.IsNullOrEmpty(Model.Firm?.City) ? "" : "/ " + Model.Firm.City)</div>

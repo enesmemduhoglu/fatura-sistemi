@@ -110,6 +110,8 @@ public class ManageController : Controller
                         InvoiceType.Purchase => "Alış",
                         InvoiceType.Expense => "Gider",
                         InvoiceType.SalesOrder => "Satış Siparişi",
+                        InvoiceType.SalesReturn => "Satış İade",
+                        InvoiceType.PurchaseReturn => "Alış İade",
                         _ => "Alış Siparişi"
                     };
                     string status = i.IsOrder

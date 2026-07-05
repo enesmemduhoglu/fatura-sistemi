@@ -33,6 +33,14 @@ public class InvoiceController : Controller
     public Task<IActionResult> PurchaseOrders(string? status, string? q, DateTime? start, DateTime? end)
         => List("PurchaseOrders", status, q, start, end);
 
+    [HttpGet("salesreturns")]
+    public Task<IActionResult> SalesReturns(string? status, string? q, DateTime? start, DateTime? end)
+        => List("SalesReturns", status, q, start, end);
+
+    [HttpGet("purchasereturns")]
+    public Task<IActionResult> PurchaseReturns(string? status, string? q, DateTime? start, DateTime? end)
+        => List("PurchaseReturns", status, q, start, end);
+
     private async Task<IActionResult> List(string mode, string? status, string? q, DateTime? start, DateTime? end)
     {
         var query = _db.Invoices.AsNoTracking().Include(i => i.Firm).Include(i => i.Payments).AsQueryable();
@@ -42,6 +50,8 @@ public class InvoiceController : Controller
             "Purchase" => query.Where(i => i.Type == InvoiceType.Purchase),
             "Orders" => query.Where(i => i.Type == InvoiceType.SalesOrder),
             "PurchaseOrders" => query.Where(i => i.Type == InvoiceType.PurchaseOrder),
+            "SalesReturns" => query.Where(i => i.Type == InvoiceType.SalesReturn),
+            "PurchaseReturns" => query.Where(i => i.Type == InvoiceType.PurchaseReturn),
             _ => query.Where(i => i.Type == InvoiceType.Expense)
         };
 
@@ -97,6 +107,14 @@ public class InvoiceController : Controller
     public Task<IActionResult> EditPurchaseOrder(int? id)
         => Edit(id, InvoiceType.PurchaseOrder);
 
+    [HttpGet("salesreturns/edit")]
+    public Task<IActionResult> EditSalesReturn(int? id)
+        => Edit(id, InvoiceType.SalesReturn);
+
+    [HttpGet("purchasereturns/edit")]
+    public Task<IActionResult> EditPurchaseReturn(int? id)
+        => Edit(id, InvoiceType.PurchaseReturn);
+
     private async Task<IActionResult> Edit(int? id, InvoiceType type)
     {
         Invoice invoice;
@@ -146,7 +164,7 @@ public class InvoiceController : Controller
         if (model.IsOrder && model.OrderState == null) model.OrderState = OrderStatus.Waiting;
 
         if (string.IsNullOrWhiteSpace(model.InvoiceNumber))
-            model.InvoiceNumber = await NextInvoiceNumber(model.IsOrder ? "SIP" : "ISB");
+            model.InvoiceNumber = await NextInvoiceNumber(model.IsOrder ? "SIP" : model.IsReturn ? "IAD" : "ISB");
 
         if (model.Id == 0)
         {
@@ -172,6 +190,8 @@ public class InvoiceController : Controller
                 InvoiceType.Expense => RedirectToAction(nameof(EditExpense)),
                 InvoiceType.SalesOrder => RedirectToAction(nameof(EditOrder)),
                 InvoiceType.PurchaseOrder => RedirectToAction(nameof(EditPurchaseOrder)),
+                InvoiceType.SalesReturn => RedirectToAction(nameof(EditSalesReturn)),
+                InvoiceType.PurchaseReturn => RedirectToAction(nameof(EditPurchaseReturn)),
                 _ => RedirectToAction(nameof(EditSales), new { type = model.Type == InvoiceType.SalesRetail ? "Net" : "Gross" })
             };
         }
@@ -202,6 +222,8 @@ public class InvoiceController : Controller
             "Purchase" => query.Where(i => i.Type == InvoiceType.Purchase),
             "Orders" => query.Where(i => i.Type == InvoiceType.SalesOrder),
             "PurchaseOrders" => query.Where(i => i.Type == InvoiceType.PurchaseOrder),
+            "SalesReturns" => query.Where(i => i.Type == InvoiceType.SalesReturn),
+            "PurchaseReturns" => query.Where(i => i.Type == InvoiceType.PurchaseReturn),
             _ => query.Where(i => i.Type == InvoiceType.Expense)
         };
         if (status == "Open") query = query.Where(i => i.Status == InvoiceStatus.Open);
@@ -231,6 +253,8 @@ public class InvoiceController : Controller
                 InvoiceType.Expense => "Gider",
                 InvoiceType.SalesOrder => "Satış Siparişi",
                 InvoiceType.PurchaseOrder => "Alış Siparişi",
+                InvoiceType.SalesReturn => "Satış İade",
+                InvoiceType.PurchaseReturn => "Alış İade",
                 _ => "Alış"
             };
             string firmName = (i.Firm?.Name ?? "").Replace(";", ",");
@@ -261,6 +285,8 @@ public class InvoiceController : Controller
             "Purchase" => "alis-faturalari",
             "Orders" => "satis-siparisleri",
             "PurchaseOrders" => "alis-siparisleri",
+            "SalesReturns" => "satis-iade-faturalari",
+            "PurchaseReturns" => "alis-iade-faturalari",
             _ => "giderler"
         };
         var bytes = System.Text.Encoding.UTF8.GetPreamble()
@@ -355,6 +381,8 @@ public class InvoiceController : Controller
         InvoiceType.Expense => $"/invoice/purchaseservices/edit?id={invoice.Id}",
         InvoiceType.SalesOrder => $"/invoice/orders/edit?id={invoice.Id}",
         InvoiceType.PurchaseOrder => $"/invoice/purchaseorders/edit?id={invoice.Id}",
+        InvoiceType.SalesReturn => $"/invoice/salesreturns/edit?id={invoice.Id}",
+        InvoiceType.PurchaseReturn => $"/invoice/purchasereturns/edit?id={invoice.Id}",
         InvoiceType.SalesRetail => $"/invoice/sales/edit?id={invoice.Id}&type=Net",
         _ => $"/invoice/sales/edit?id={invoice.Id}"
     };
@@ -365,6 +393,8 @@ public class InvoiceController : Controller
         InvoiceType.Expense => RedirectToAction(nameof(Expenses)),
         InvoiceType.SalesOrder => RedirectToAction(nameof(Orders)),
         InvoiceType.PurchaseOrder => RedirectToAction(nameof(PurchaseOrders)),
+        InvoiceType.SalesReturn => RedirectToAction(nameof(SalesReturns)),
+        InvoiceType.PurchaseReturn => RedirectToAction(nameof(PurchaseReturns)),
         _ => RedirectToAction(nameof(Sales))
     };
 
@@ -410,6 +440,54 @@ public class InvoiceController : Controller
         TempData["Success"] = $"{source.InvoiceNumber} numaralı belge kopyalandı; kaydedilmemiş taslak olarak açıldı.";
         await FillEditViewBags(copy);
         return View("Edit", copy);
+    }
+
+    // Faturadan iade taslağı: satırlar aynen kopyalanır, tip iade karşılığına çevrilir;
+    // kayıt normal Save akışıyla IAD serisinden numara alır
+    [HttpGet("return/{id:int}")]
+    public async Task<IActionResult> CreateReturn(int id)
+    {
+        var source = await _db.Invoices.AsNoTracking()
+            .Include(i => i.Lines)
+            .FirstOrDefaultAsync(i => i.Id == id);
+        if (source == null) return NotFound();
+        if (source.IsOrder || source.IsReturn)
+        {
+            TempData["Error"] = "Yalnızca satış, alış ve gider faturaları için iade faturası oluşturulabilir.";
+            return RedirectToList(source.Type);
+        }
+
+        var ret = new Invoice
+        {
+            Type = source.IsSales ? InvoiceType.SalesReturn : InvoiceType.PurchaseReturn,
+            FirmId = source.FirmId,
+            InvoiceDate = DateTime.Now,
+            Currency = source.Currency,
+            ExchangeRate = source.ExchangeRate,
+            Category = source.Category,
+            Description = $"{source.InvoiceNumber} numaralı faturanın iadesidir.",
+            GeneralDiscountValue = source.GeneralDiscountValue,
+            GeneralDiscountType = source.GeneralDiscountType,
+            StopajRate = source.StopajRate,
+            TevkifatCode = source.TevkifatCode,
+            Lines = source.Lines.Select(l => new InvoiceLine
+            {
+                ProductId = l.ProductId,
+                ServiceId = l.ServiceId,
+                ItemName = l.ItemName,
+                Quantity = l.Quantity,
+                Unit = l.Unit,
+                UnitPrice = l.UnitPrice,
+                VatRate = l.VatRate,
+                DiscountValue = l.DiscountValue,
+                DiscountType = l.DiscountType
+            }).ToList()
+        };
+        InvoiceCalculator.Calculate(ret);
+
+        TempData["Success"] = $"{source.InvoiceNumber} numaralı fatura için iade taslağı oluşturuldu; kontrol edip kaydedin.";
+        await FillEditViewBags(ret);
+        return View("Edit", ret);
     }
 
     // Sipariş: bekleyen siparişi faturaya kopyalar ve Faturalandı işaretler
@@ -498,8 +576,8 @@ public class InvoiceController : Controller
 
     private async Task FillEditViewBags(Invoice invoice)
     {
-        // Satış tarafı (satış faturaları + satış siparişi) müşterileri ve satış fiyatını kullanır
-        bool isSales = invoice.IsSales || invoice.Type == InvoiceType.SalesOrder;
+        // Satış tarafı (satış faturaları + satış siparişi + satış iadesi) müşterileri ve satış fiyatını kullanır
+        bool isSales = invoice.IsSales || invoice.Type is InvoiceType.SalesOrder or InvoiceType.SalesReturn;
         bool isExpense = invoice.Type == InvoiceType.Expense;
 
         ViewBag.Firms = await _db.Firms.AsNoTracking()

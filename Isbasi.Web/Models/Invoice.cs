@@ -9,7 +9,9 @@ public enum InvoiceType
     [Display(Name = "Alış Faturası")] Purchase = 2,
     [Display(Name = "Gider Faturası")] Expense = 3,
     [Display(Name = "Satış Siparişi")] SalesOrder = 4,
-    [Display(Name = "Alış Siparişi")] PurchaseOrder = 5
+    [Display(Name = "Alış Siparişi")] PurchaseOrder = 5,
+    [Display(Name = "Satış İade Faturası")] SalesReturn = 6,
+    [Display(Name = "Alış İade Faturası")] PurchaseReturn = 7
 }
 
 public enum OrderStatus
@@ -118,6 +120,10 @@ public class Invoice
 
     public bool IsSales => Type is InvoiceType.SalesWholesale or InvoiceType.SalesRetail;
     public bool IsOrder => Type is InvoiceType.SalesOrder or InvoiceType.PurchaseOrder;
+    public bool IsReturn => Type is InvoiceType.SalesReturn or InvoiceType.PurchaseReturn;
+
+    // Nakit yönü: satışlarda ve alış iadesinde para girer; alış/gider ve satış iadesinde çıkar
+    public bool IsCashIncoming => IsSales || Type == InvoiceType.PurchaseReturn;
 
     public decimal GrandTotalTry => Math.Round(GrandTotal * ExchangeRate, 2);
     public decimal VatTotalTry => Math.Round(VatTotal * ExchangeRate, 2);
