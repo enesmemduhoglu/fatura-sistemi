@@ -6,7 +6,7 @@ Küçük işletmeler için ön muhasebe ve faturalama web uygulaması. ASP.NET C
 
 ## 🚀 Canlı Demo
 
-**[https://fatura-sistemi.onrender.com](https://fatura-sistemi.onrender.com)** — buradan canlı deneyebilirsiniz.
+**[https://fatura-sistemi.onrender.com](https://invoicesystem-sfgr.onrender.com)** — buradan canlı deneyebilirsiniz.
 
 Demo giriş bilgileri:
 
