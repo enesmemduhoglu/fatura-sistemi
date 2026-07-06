@@ -8,6 +8,12 @@ Küçük işletmeler için ön muhasebe ve faturalama web uygulaması. ASP.NET C
 
 **[https://fatura-sistemi.onrender.com](https://fatura-sistemi.onrender.com)** — buradan canlı deneyebilirsiniz.
 
+Demo giriş bilgileri:
+
+| E-posta | Parola |
+|---|---|
+| `demo@yildizticaret.com` | `faturaSistemi1` |
+
 > Ücretsiz sunucuda çalıştığı için 15 dakika boyunca ziyaret edilmezse uykuya geçer; ilk açılış 30-50 saniye sürebilir. Demo ortamıdır, girilen veriler kalıcı değildir.
 
 ## Modüller
